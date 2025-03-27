@@ -182,6 +182,78 @@ def extract_statistics(df):
         stats["business_hours_tickets"] = int(df['is_business_hours'].sum())
         stats["non_business_hours_tickets"] = int((~df['is_business_hours']).sum())
     
+    # Common issues from short descriptions
+    if 'short description' in df.columns:
+        # Analyze short descriptions for automation opportunities
+        desc_text = ' '.join(df['short description'].astype(str).tolist())
+        desc_text = desc_text.lower()
+        
+        # Define common automation-related patterns
+        automation_patterns = {
+            'password_reset': ['password reset', 'reset password', 'forgot password', 'change password'],
+            'access_request': ['access request', 'request access', 'need access', 'grant access', 'permission'],
+            'system_outage': ['outage', 'down', 'not working', 'unavailable', 'cannot access'],
+            'software_install': ['install', 'installation', 'deploy', 'deployment', 'update', 'upgrade'],
+            'account_locked': ['account locked', 'locked out', 'unlock account', 'locked account'],
+            'email_issues': ['email', 'outlook', 'mailbox', 'mail', 'exchange'],
+            'network_issues': ['network', 'wifi', 'connection', 'internet', 'vpn', 'remote access'],
+            'printer_issues': ['print', 'printer', 'scanning', 'scanner'],
+            'data_request': ['data export', 'report request', 'need report', 'data request'],
+            'user_creation': ['new user', 'create user', 'new hire', 'new employee', 'onboarding']
+        }
+        
+        # Count occurrences of each pattern
+        automation_counts = {}
+        for category, patterns in automation_patterns.items():
+            count = 0
+            for pattern in patterns:
+                count += desc_text.count(pattern)
+            if count > 0:
+                automation_counts[category] = count
+        
+        # Add to stats if we found patterns
+        if automation_counts:
+            stats["automation_opportunities_from_descriptions"] = automation_counts
+    
+    # Analyze closed notes for resolution patterns
+    closed_notes_column = None
+    for col_name in ['closed notes', 'close notes', 'resolution notes', 'resolution', 'work notes']:
+        if col_name in df.columns:
+            closed_notes_column = col_name
+            break
+    
+    if closed_notes_column:
+        # Combine all notes into one text for analysis
+        notes_text = ' '.join(df[closed_notes_column].astype(str).fillna('').tolist())
+        notes_text = notes_text.lower()
+        
+        # Define patterns that indicate resolution methods suitable for automation
+        resolution_patterns = {
+            'password_reset_done': ['password reset', 'reset user password', 'password changed'],
+            'account_unlock': ['account unlocked', 'unlocked user', 'unlocked account'],
+            'provided_access': ['granted access', 'access provided', 'gave access', 'added permission'],
+            'installed_software': ['installed', 'software installed', 'deployment completed'],
+            'restarted_service': ['restarted', 'rebooted', 'service restarted', 'restart resolved'],
+            'cleared_cache': ['cleared cache', 'cache cleared', 'deleted temp files'],
+            'data_correction': ['data fixed', 'corrected data', 'fixed record', 'database correction'],
+            'configuration_change': ['reconfigured', 'changed setting', 'updated configuration', 'config change'],
+            'knowledge_article': ['per knowledge article', 'followed kb', 'standard procedure', 'according to documentation'],
+            'user_education': ['showed user', 'educated user', 'trained user', 'explained to user']
+        }
+        
+        # Count occurrences of each resolution pattern
+        resolution_counts = {}
+        for category, patterns in resolution_patterns.items():
+            count = 0
+            for pattern in patterns:
+                count += notes_text.count(pattern)
+            if count > 0:
+                resolution_counts[category] = count
+        
+        # Add to stats if we found patterns
+        if resolution_counts:
+            stats["automation_opportunities_from_resolutions"] = resolution_counts
+    
     # Common issues if we extracted them
     issue_columns = [col for col in df.columns if col.startswith('contains_')]
     if issue_columns:
@@ -605,10 +677,12 @@ STATISTICS:
 INSIGHTS:
 {insights}
 
+I want you to pay special attention to the "automation_opportunities_from_descriptions" and "automation_opportunities_from_resolutions" fields in the statistics if present. These contain patterns found in ticket descriptions and resolution notes that could indicate good automation opportunities.
+
 For each automation opportunity, provide:
 1. A descriptive title
 2. Detailed automation scope
-3. Justification with data-backed reasoning
+3. Justification with data-backed reasoning from the statistics and ticket text analysis
 4. Type of automation (AI, RPA, scripting, etc.) with specific technology recommendations
 5. Detailed implementation plan including steps, timeline, and required resources
 
@@ -617,7 +691,7 @@ Format your response as a JSON array with objects like:
   {{
     "title": "Automated Password Reset System",
     "scope": "Implement an automated self-service password reset system that integrates with Active Directory and includes multi-factor authentication...",
-    "justification": "Password reset tickets make up 23% of all tickets and have an average resolution time of 1.2 hours. Automating this process could save approximately 450 hours of IT staff time per month...",
+    "justification": "Password reset tickets make up 23% of all tickets and have an average resolution time of 1.2 hours. Analysis of short descriptions shows 45 tickets mentioning password reset issues, and resolution notes show standard reset procedures being followed in 38 cases...",
     "type": "AI + RPA hybrid solution. Use natural language processing for request detection and RPA for execution of reset procedures in Active Directory...",
     "implementation_plan": "1. Requirements gathering (2 weeks)\\n2. System design and architecture (3 weeks)\\n3. Development of NLP component (4 weeks)\\n4. Development of RPA component (4 weeks)\\n5. Integration and testing (3 weeks)\\n6. User acceptance testing (2 weeks)\\n7. Deployment (1 week)\\n\\nRequired resources: 1 Project Manager, 2 Developers, 1 QA Engineer, 1 Systems Administrator"
   }}
@@ -625,7 +699,7 @@ Format your response as a JSON array with objects like:
 
 Focus on automation opportunities that:
 1. Would have the highest impact based on ticket volume and resolution time
-2. Address clear patterns in the data
+2. Address clear patterns identified in the short descriptions and closed notes
 3. Have realistic implementation paths
 4. Include a mix of different automation approaches (AI, RPA, scripting, self-service)
 5. Consider both technical feasibility and business value
@@ -667,64 +741,61 @@ Focus on automation opportunities that:
 
 def generate_fallback_opportunities(stats):
     """Generate fallback automation opportunities when LLM fails"""
+    # Create a list of opportunities to return
     opportunities = []
     
-    # Opportunity 1: Password Reset Automation (common in most IT environments)
-    if "top_issues" in stats and any(issue in stats["top_issues"] for issue in ["password", "reset", "login", "access"]):
-        password_issue_count = sum(stats["top_issues"].get(issue, 0) for issue in ["password", "reset", "login", "access"])
-        password_opportunity = {
-            "title": "Automated Password Reset System",
-            "scope": "Implement a self-service password reset portal that allows users to securely reset their passwords without IT intervention. The system should integrate with Active Directory and include multi-factor authentication for security.",
-            "justification": f"Password and access-related issues account for a significant portion of tickets. Automating this process would reduce the workload on IT staff and provide immediate resolution for users.",
-            "type": "Self-service portal with RPA integration. Use a web portal for user interaction and RPA to execute the reset procedures in Active Directory.",
-            "implementation_plan": "1. Requirements gathering (2 weeks)\n2. System design (2 weeks)\n3. Development of self-service portal (3 weeks)\n4. Integration with Active Directory (2 weeks)\n5. Security testing (1 week)\n6. User acceptance testing (1 week)\n7. Deployment and training (1 week)\n\nRequired resources: 1 Web Developer, 1 Systems Administrator, 1 Security Specialist"
-        }
-        opportunities.append(password_opportunity)
+    # Opportunity 1: Password Reset
+    password_opportunity = {
+        "title": "Automated Password Reset System",
+        "scope": "Implement a self-service password reset portal integrated with Active Directory.",
+        "justification": "Password reset tickets are common and follow a standard procedure that could be automated.",
+        "type": "Self-service portal with RPA integration",
+        "implementation_plan": "1. Requirements gathering (2 weeks)\n2. System design (2 weeks)\n3. Development (3 weeks)\n4. Testing (2 weeks)\n5. Deployment (1 week)"
+    }
+    opportunities.append(password_opportunity)
     
-    # Opportunity 2: Ticket Categorization 
-    if "total_tickets" in stats:
-        categorization_opportunity = {
-            "title": "AI-Powered Ticket Categorization and Routing",
-            "scope": "Implement an AI system that automatically categorizes incoming tickets based on their description and routes them to the appropriate assignment group. The system should learn from past ticket assignments to improve accuracy over time.",
-            "justification": f"With {stats.get('total_tickets', 0)} tickets in the dataset, manual categorization and routing is time-consuming and prone to errors. Automation would reduce response time and ensure tickets reach the right team immediately.",
-            "type": "AI/ML solution using Natural Language Processing. Implement a machine learning model trained on historical ticket data to predict the appropriate category and assignment group.",
-            "implementation_plan": "1. Data preparation and cleaning (3 weeks)\n2. Model development and training (4 weeks)\n3. Integration with ticketing system (2 weeks)\n4. Testing and validation (2 weeks)\n5. Pilot deployment (2 weeks)\n6. Full deployment and monitoring (1 week)\n\nRequired resources: 1 Data Scientist, 1 ML Engineer, 1 Systems Integrator"
-        }
-        opportunities.append(categorization_opportunity)
+    # Opportunity 2: Ticket Categorization
+    categorization_opportunity = {
+        "title": "AI-Powered Ticket Categorization",
+        "scope": "Implement an AI system that automatically categorizes and routes tickets.",
+        "justification": "Manual categorization is time-consuming. Automation would reduce response time.",
+        "type": "AI/ML using Natural Language Processing",
+        "implementation_plan": "1. Data preparation (3 weeks)\n2. Model development (4 weeks)\n3. Integration (2 weeks)\n4. Testing (2 weeks)\n5. Deployment (2 weeks)"
+    }
+    opportunities.append(categorization_opportunity)
     
-    # Opportunity 3: Knowledge Base Article Suggestions
-    if "top_issues" in stats:
-        kb_opportunity = {
-            "title": "Automated Knowledge Base Article Suggestions",
-            "scope": "Develop a system that automatically suggests relevant knowledge base articles to agents based on ticket content, and recommends new KB articles to be created for common issues that lack documentation.",
-            "justification": "Analysis of ticket data shows recurring issues that could be resolved faster with proper knowledge base articles. This would reduce resolution time and improve consistency in solutions.",
-            "type": "AI-powered recommendation system using natural language processing to match ticket text with existing KB articles and identify knowledge gaps.",
-            "implementation_plan": "1. KB article inventory and indexing (2 weeks)\n2. Development of text matching algorithm (3 weeks)\n3. Integration with ticketing system (2 weeks)\n4. KB gap analysis functionality (2 weeks)\n5. User interface development (2 weeks)\n6. Testing and refinement (2 weeks)\n7. Deployment and training (1 week)\n\nRequired resources: 1 Knowledge Management Specialist, 1 Developer, 1 UX Designer"
-        }
-        opportunities.append(kb_opportunity)
+    # Opportunity 3: Knowledge Base Suggestions
+    kb_opportunity = {
+        "title": "Knowledge Base Article Suggestions",
+        "scope": "Develop a system that suggests relevant KB articles based on ticket content.",
+        "justification": "Many tickets could be resolved faster with proper knowledge base articles.",
+        "type": "AI recommendation system using NLP",
+        "implementation_plan": "1. KB inventory (2 weeks)\n2. Algorithm development (3 weeks)\n3. Integration (2 weeks)\n4. Testing (2 weeks)\n5. Deployment (1 week)"
+    }
+    opportunities.append(kb_opportunity)
     
-    # Opportunity 4: SLA Monitoring and Alerting
-    if "avg_resolution_time_hours" in stats:
-        sla_opportunity = {
-            "title": "Proactive SLA Monitoring and Alerting System",
-            "scope": "Implement an automated system that monitors ticket SLAs in real-time, sends proactive alerts for tickets at risk of breaching SLA, and provides escalation paths based on ticket priority and age.",
-            "justification": f"The average ticket resolution time is {stats.get('avg_resolution_time_hours', 0):.2f} hours, but many tickets likely breach SLA targets. A proactive monitoring system would improve compliance and customer satisfaction.",
-            "type": "RPA and Business Rules Engine to monitor tickets and trigger alerts based on configurable rules and thresholds.",
-            "implementation_plan": "1. SLA policy definition and mapping (2 weeks)\n2. Alert rules configuration (1 week)\n3. Notification system development (2 weeks)\n4. Dashboard development (2 weeks)\n5. Integration with ticketing system (2 weeks)\n6. Testing across different ticket types (1 week)\n7. Deployment and staff training (1 week)\n\nRequired resources: 1 Business Analyst, 1 Developer, 1 QA Tester"
-        }
-        opportunities.append(sla_opportunity)
+    # Opportunity 4: SLA Monitoring
+    sla_opportunity = {
+        "title": "SLA Monitoring and Alerting System",
+        "scope": "Implement automated monitoring of ticket SLAs with proactive alerts.",
+        "justification": "Many tickets breach SLA targets. Proactive monitoring would improve compliance.",
+        "type": "Business Rules Engine with alerting system",
+        "implementation_plan": "1. SLA policy definition (2 weeks)\n2. Alert development (2 weeks)\n3. Dashboard creation (2 weeks)\n4. Testing (1 week)\n5. Deployment (1 week)"
+    }
+    opportunities.append(sla_opportunity)
     
-    # Opportunity 5: Chatbot for Common Issues
+    # Opportunity 5: IT Support Chatbot
     chatbot_opportunity = {
-        "title": "IT Support Chatbot for First-Level Resolution",
-        "scope": "Deploy an AI chatbot that can handle common IT issues, guide users through basic troubleshooting steps, and create tickets automatically when it cannot resolve the issue.",
-        "justification": "Many common IT issues follow standard troubleshooting patterns that can be automated. A chatbot can provide 24/7 support and immediate responses for these cases.",
-        "type": "Conversational AI using natural language understanding and a decision tree-based resolution framework. Integration with existing ticketing system for seamless escalation.",
-        "implementation_plan": "1. Define scope and common issues to address (2 weeks)\n2. Design conversation flows (3 weeks)\n3. Build NLU model (4 weeks)\n4. Develop troubleshooting logic (3 weeks)\n5. Integration with ticketing system (2 weeks)\n6. User testing and refinement (3 weeks)\n7. Pilot deployment (2 weeks)\n8. Full deployment and continuous improvement (ongoing)\n\nRequired resources: 1 Conversational AI Specialist, 1 IT Support SME, 1 Systems Integrator, 1 UX Designer"
+        "title": "IT Support Chatbot",
+        "scope": "Deploy an AI chatbot that handles common IT issues and creates tickets when needed.",
+        "justification": "Many IT issues follow standard patterns that can be automated via conversational AI.",
+        "type": "Conversational AI with ticketing integration",
+        "implementation_plan": "1. Define scope (2 weeks)\n2. Design flows (3 weeks)\n3. Build model (4 weeks)\n4. Testing (3 weeks)\n5. Deployment (2 weeks)"
     }
     opportunities.append(chatbot_opportunity)
     
-    return opportunities[:5]  # Return at most 5 opportunities
+    # Return exactly 5 opportunities
+    return opportunities
 
 def process_query(query, df, stats, insights):
     """Process a natural language query about ticket data"""
@@ -822,7 +893,7 @@ def extract_query_stats(df, query, base_stats):
 
 # Application UI
 # Application header
-st.title("Qualitative Ticket Analysis System")
+st.title("Agentic Ticket Analysis System")
 
 # Sidebar for file upload
 with st.sidebar:
@@ -887,7 +958,21 @@ with st.sidebar:
                 
                 # Generate automation opportunities
                 automation_opportunities = generate_automation_opportunities(stats, insights)
-                st.session_state.automation_opportunities = automation_opportunities
+                
+                # Validate automation opportunities the same way we did with questions
+                validated_opportunities = []
+                for opp in automation_opportunities:
+                    if isinstance(opp, dict):
+                        validated_opp = {
+                            'title': opp.get('title', 'Opportunity title not available'),
+                            'scope': opp.get('scope', 'Scope not available'),
+                            'justification': opp.get('justification', 'Justification not available'),
+                            'type': opp.get('type', 'Automation type not available'),
+                            'implementation_plan': opp.get('implementation_plan', 'Implementation plan not available')
+                        }
+                        validated_opportunities.append(validated_opp)
+                
+                st.session_state.automation_opportunities = validated_opportunities if validated_opportunities else generate_fallback_opportunities(stats)
                 
                 # Generate charts
                 charts = generate_charts(processed_df)
@@ -976,12 +1061,23 @@ with tab3:
     st.header("Top 5 Automation Opportunities")
     
     if st.session_state.automation_opportunities is not None:
-        for i, opportunity in enumerate(st.session_state.automation_opportunities):
-            with st.expander(f"Opportunity {i+1}: {opportunity['title']}"):
-                st.markdown(f"**Automation Scope:**\n{opportunity['scope']}")
-                st.markdown(f"**Justification:**\n{opportunity['justification']}")
-                st.markdown(f"**Type of Automation:**\n{opportunity['type']}")
-                st.markdown(f"**Implementation Plan:**\n{opportunity['implementation_plan']}")
+        try:
+            for i, opportunity in enumerate(st.session_state.automation_opportunities):
+                # Get fields with fallbacks for missing values
+                title = opportunity.get('title', 'Opportunity title not available')
+                scope = opportunity.get('scope', 'Scope not available')
+                justification = opportunity.get('justification', 'Justification not available')
+                automation_type = opportunity.get('type', 'Automation type not available')
+                implementation_plan = opportunity.get('implementation_plan', 'Implementation plan not available')
+                
+                with st.expander(f"Opportunity {i+1}: {title}"):
+                    st.markdown(f"**Automation Scope:**\n{scope}")
+                    st.markdown(f"**Justification:**\n{justification}")
+                    st.markdown(f"**Type of Automation:**\n{automation_type}")
+                    st.markdown(f"**Implementation Plan:**\n{implementation_plan}")
+        except Exception as e:
+            st.error(f"Error displaying automation opportunities: {str(e)}")
+            st.info("There was an issue displaying the automation opportunities. Please try uploading the data again.")
     else:
         st.info("Please upload ticket data to view automation opportunities.")
 
