@@ -1,0 +1,24 @@
+We need to create a Agentic AI based solution to Generate Qualitative ticket analysis
+
+1. upload ticket data in either .csv or .xls format
+2. Generate Data insight and charts (Pi charts, Bar charts) on the ticket data
+3. generate 10 pre defined questions based on the ticket data which shall give summarized answer of the questions and the automation scope against the questions solution. If there is no automation possible then mention that as a message.
+4. Suggest 5 best Automation opportunities in detail which shall cover
+	a. Automation scope
+	b. Justification for the automation
+	c. What kind of automation (AI, RPA, scripting etc.)
+	d. Implementation plan for the automation
+5. Chat interface for user query prompt.
+
+The ticket data may be big hence we have to create chunks of 500/1000 rows and process the data accordingly to accommodate the entire data and generate insight. 
+Insight shall be always on the entire data set not on the chunks.
+There shall be no <Think> </think> block in any of the insight.
+
+We can plan for 1. data extraction module, 1 Data processing module,  1 Insight generation agent from the data, 1 module to generate charts and diagrams and another module shall process the top 5 automation suggestions, and the last module shall help users questions as input prompt processing.  All these module can trigger the Insight generation agent as required. 
+
+The API details shall be in the .env file and we are using GROQ API
+UI is streamlit and we shall use seaborn and matplotlib for charts visualisation.
+I suggest to have 4 tabs in the main mage to navigate to 4 functions. File upload can be in the left pane.
+We can give a suggestive texts mentioning how meaningful ticket data can generate meaningful insight. 
+
+The ticket data may have the following fields but not limited to these, (i,e, Number	Priority	Opened	Assignment Group	Subcategory	Subcategory 3	Subcategory 2	Short description	State	Opened by	Assigned to	Closed	Work notes	Correlation display	External Ref#	EBS Resolution	EBS Resolution Tier 2	EBS Resolution Tier 3	Close notes).

@@ -1,0 +1,21 @@
+create virtual environment: python -m venv .venv
+Activate virtual environment: .venv\Scripts\activate
+How to activate .env file: pip install python-dotenv then from dotenv import load_dotenv then add this function load_dotenv()  # Load variables from .env into the environment
+Run the requirement.txt file: pip install -r requirements.txt
+create requirement.txt file: pip freeze > requirements.txt
+to run the program : streamlit run main.py
+
+GIT PUSH Steps: 
+In the terminal, initialize a new Git repository: git init
+Add all files in your folder to the staging area: git add .
+Commit the files with a message: git commit -m "Initial commit"
+Link your local repository to the GitHub repository you mentioned (first time required): git remote add origin https://github.com/tosurajitc/Excel-multitab.git
+Push the changes to the remote repository: git push -u origin main (or master)
+
+If git hub fails then:
+git remote rename origin old-origin
+git remote add origin https://github.com/tosurajitc/Excel-multitab.git
+
+
+
+

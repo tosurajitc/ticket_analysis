@@ -1,0 +1,22 @@
+# Project dependencies
+
+# Core packages
+streamlit>=1.22.0
+pandas>=1.5.3
+numpy>=1.24.3
+matplotlib>=3.7.1
+seaborn>=0.12.2
+
+# File handling
+openpyxl>=3.1.2
+xlrd>=2.0.1
+
+# API and environment
+groq>=0.4.0
+python-dotenv>=1.0.0
+
+# Date and time handling
+python-dateutil>=2.8.2
+
+# Progress tracking
+tqdm>=4.65.0

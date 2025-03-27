@@ -1,0 +1,201 @@
+Number,Priority,Opened,Assignment Group,Subcategory,Subcategory 2,Subcategory 3,Short description,State,Opened by,Assigned to,Closed,Work notes,External Ref#
+INC100001,Critical,2024-11-16 04:12:52.881045,Security Team,Network,Hardware,Access,video conferencing showing error message: 0x0000007B,In Progress,Patricia Thomas,Mary Johnson,,Troubleshooting steps for video conferencing,EXT-9928
+INC100002,Medium,2024-08-27 21:49:46.438724,Network Support,Printer,Printer,,New user setup for desktop computer,In Progress,Daniel Jackson,David Williams,,Troubleshooting steps for desktop computer,
+INC100003,Low,2024-11-03 03:28:33.490063,Service Desk,Software,,,Need access to video conferencing,Closed,Joseph Harris,Michael Davis,2024-11-10 13:46:51.142217,Troubleshooting steps for video conferencing,
+INC100004,Low,2025-01-03 22:54:52.559989,Desktop Support,Application,Connectivity,,HR system showing error message: AUTH502,Closed,Robert Jones,Jennifer Wilson,2025-01-07 05:55:15.791869,Troubleshooting steps for HR system,EXT-5010
+INC100005,Medium,2024-05-26 10:14:30.408153,Service Desk,Access,Email,Password Reset,Configuration change needed for CRM,Cancelled,James Anderson,Susan Miller,2024-05-26 14:09:25.166235,Troubleshooting steps for CRM,
+INC100006,Low,2024-08-19 04:34:16.996726,Database Admin,Network,,,video conferencing needs updating,Resolved,Lisa Brown,Patricia Thomas,2024-08-25 18:41:51.804819,,
+INC100007,Critical,2024-04-29 23:12:08.587190,Server Team,Printer,Security,,Issue with database after recent update,Open,James Anderson,,,,EXT-2876
+INC100008,Medium,2024-12-01 14:37:07.562499,Application Support,Software,,Account,laptop is running slowly,In Progress,Robert Jones,Michael Davis,,Troubleshooting steps for laptop,EXT-5889
+INC100009,Medium,2025-01-28 23:51:33.928844,Application Support,Printer,Hardware,Database,network drive account locked out,Open,David Williams,William Moore,,,
+INC100010,Low,2024-04-17 22:15:37.415438,Desktop Support,Connectivity,Account,Account,Need access to video conferencing,Closed,Jennifer Wilson,Barbara White,2024-04-18 22:59:42.259654,Troubleshooting steps for video conferencing,EXT-9835
+INC100011,Medium,2024-12-28 10:57:32.605984,Infrastructure,Performance,Hardware,,Need assistance with network drive,Closed,James Anderson,Susan Miller,2024-12-29 21:08:46.576024,Troubleshooting steps for network drive,EXT-1964
+INC100012,Low,2024-06-19 08:21:57.459146,Desktop Support,Account,,,printer showing error message: 0x80004005,Closed,Lisa Brown,Robert Jones,2024-06-20 09:54:43.499383,Troubleshooting steps for printer,
+INC100013,Critical,2024-06-05 06:49:36.424193,Infrastructure,Application,Application,,New user setup for CRM,Resolved,Jennifer Wilson,Barbara White,2024-06-09 10:19:11.594023,Troubleshooting steps for CRM,EXT-9786
+INC100014,Medium,2024-09-07 12:41:26.209343,Security Team,Mobile Device,Account,,Need assistance with video conferencing,In Progress,Joseph Harris,,,,
+INC100015,Medium,2024-05-27 11:43:16.548882,Infrastructure,Hardware,,,Cannot access mobile app,In Progress,David Williams,Michael Davis,,,
+INC100016,Medium,2024-10-16 15:21:59.211797,Database Admin,Access,Hardware,,New user setup for video conferencing,Open,John Smith,Jessica Taylor,,,EXT-9320
+INC100017,High,2024-04-26 00:36:44.532704,Security Team,Application,Performance,,Issue with website after recent update,Closed,Mary Johnson,Joseph Harris,2024-04-26 03:02:43.965355,,EXT-6147
+INC100018,Medium,2024-06-22 21:43:29.566570,Database Admin,Security,Software,Access,database account locked out,Closed,Susan Miller,Joseph Harris,2024-06-27 18:12:05.770694,Troubleshooting steps for database,
+INC100019,High,2024-04-21 21:26:52.245074,Cloud Team,Mobile Device,,Performance,Password reset required for network drive,In Progress,William Moore,Patricia Thomas,,,EXT-2753
+INC100020,High,2024-12-23 18:24:21.910902,Security Team,Connectivity,Mobile Device,Performance,internal portal showing error message: APP9981,In Progress,Susan Miller,Lisa Brown,,Troubleshooting steps for internal portal,EXT-3143
+INC100021,High,2024-11-15 07:56:56.831453,Service Desk,Connectivity,Hardware,,Cannot access VPN,Closed,Michael Davis,William Moore,2024-11-18 06:25:03.973916,Troubleshooting steps for VPN,EXT-6050
+INC100022,Low,2024-08-07 21:10:59.552237,Network Support,Database,,,Error when trying to save,Cancelled,Lisa Brown,James Anderson,2024-08-14 00:54:43.428147,,EXT-3662
+INC100023,Low,2025-03-19 02:24:02.819388,Network Support,Network,,Printer,desktop computer is not responding,Closed,Patricia Thomas,Joseph Harris,2025-03-27 18:50:09.364877,Troubleshooting steps for desktop computer,EXT-8711
+INC100024,Low,2024-06-16 23:21:19.081397,Database Admin,Mobile Device,Mobile Device,Printer,Error when trying to login,Resolved,Daniel Jackson,Barbara White,2024-06-18 13:58:54.990170,Troubleshooting steps for website,
+INC100025,Medium,2025-03-20 21:42:25.900361,Desktop Support,Email,,,Password reset required for CRM,Closed,David Williams,Jessica Taylor,2025-03-23 18:07:34.042755,Troubleshooting steps for CRM,
+INC100026,High,2024-10-24 05:44:49.904586,Network Support,Account,Database,,ERP system needs updating,Closed,Joseph Harris,Daniel Jackson,2024-10-24 10:05:59.091747,Troubleshooting steps for ERP system,
+INC100027,Medium,2024-09-28 21:13:44.652133,Database Admin,Account,,,Unable to login to mobile app,In Progress,David Williams,Lisa Brown,,Troubleshooting steps for mobile app,EXT-5700
+INC100028,Medium,2024-06-12 12:02:10.515336,Application Support,Security,,,ERP system showing error message: APP9981,Closed,Jennifer Wilson,Jennifer Wilson,2024-06-20 09:28:03.755810,Troubleshooting steps for ERP system,
+INC100029,Critical,2024-11-08 19:33:38.122785,Security Team,Performance,,,ERP system account locked out,Cancelled,Robert Jones,Lisa Brown,2024-11-08 21:57:38.122785,Troubleshooting steps for ERP system,
+INC100030,Medium,2024-10-23 21:42:46.848649,Infrastructure,Access,,Application,New user setup for email,In Progress,David Williams,James Anderson,,,
+INC100031,Medium,2024-09-13 08:17:34.524811,Desktop Support,Security,,,Need assistance with network drive,Closed,David Williams,Daniel Jackson,2024-09-15 06:05:47.526304,,
+INC100032,Medium,2025-02-21 18:53:00.144541,Cloud Team,Security,Performance,Security,Error when trying to restart,Open,Robert Jones,Daniel Jackson,,Troubleshooting steps for internal portal,EXT-6238
+INC100033,Critical,2025-02-16 17:45:03.563752,Infrastructure,Connectivity,Security,,Error when trying to upload,Open,David Williams,Patricia Thomas,,Troubleshooting steps for database,
+INC100034,Medium,2024-10-26 23:22:17.771221,Email Team,Application,,,customer portal is not responding,Closed,Jennifer Wilson,John Smith,2024-11-05 13:48:59.610261,Troubleshooting steps for customer portal,
+INC100035,High,2024-06-16 06:45:17.629073,Network Support,Application,,,mobile app showing error message: SEC7892,Resolved,Susan Miller,James Anderson,2024-06-20 20:53:58.951369,,
+INC100036,Critical,2024-11-24 18:42:49.696462,Cloud Team,Network,,,Unable to login to accounting software,Resolved,John Smith,Robert Jones,2024-11-25 04:12:45.162723,,EXT-2341
+INC100037,Medium,2024-09-15 10:43:25.751692,Application Support,Access,,Hardware,CRM account locked out,Open,James Anderson,Mary Johnson,,Troubleshooting steps for CRM,
+INC100038,Low,2024-05-08 12:53:14.937380,Database Admin,Printer,Password Reset,Email,Issue with VPN after recent update,Resolved,Susan Miller,David Williams,2024-05-09 21:04:47.517169,,
+INC100039,High,2025-03-06 10:07:06.160476,Security Team,Software,Application,,Password reset required for VPN,Closed,Patricia Thomas,Daniel Jackson,2025-03-10 05:41:20.803799,Troubleshooting steps for VPN,EXT-7882
+INC100040,High,2025-01-21 22:27:17.197765,Cloud Team,Connectivity,,,network drive is running slowly,Cancelled,David Williams,Michael Davis,2025-01-24 07:52:04.251447,,
+INC100041,High,2024-07-23 10:13:26.693770,Database Admin,Security,Security,Printer,Need assistance with mobile app,Closed,Lisa Brown,Daniel Jackson,2024-07-25 03:08:00.792596,Troubleshooting steps for mobile app,
+INC100042,Medium,2025-02-12 00:34:34.604846,Security Team,Software,Connectivity,,Unable to login to printer,Closed,Lisa Brown,Patricia Thomas,2025-02-13 09:33:35.493555,Troubleshooting steps for printer,EXT-4986
+INC100043,Medium,2024-07-17 13:12:02.731059,Service Desk,Database,Access,Access,accounting software needs updating,Resolved,Michael Davis,Patricia Thomas,2024-07-20 13:45:40.110790,Troubleshooting steps for accounting software,
+INC100044,High,2024-12-04 16:40:07.208253,Database Admin,Connectivity,Network,,customer portal needs updating,Closed,Jessica Taylor,Daniel Jackson,2024-12-05 05:37:03.772192,Troubleshooting steps for customer portal,EXT-1893
+INC100045,Medium,2024-10-15 18:15:37.741838,Cloud Team,Software,Network,,Issue with customer portal after recent update,Open,Barbara White,John Smith,,,EXT-2070
+INC100046,Critical,2024-08-21 01:01:59.263734,Network Support,Network,,,Issue with customer portal after recent update,Closed,David Williams,Daniel Jackson,2024-08-21 04:03:32.172192,Troubleshooting steps for customer portal,
+INC100047,Medium,2024-09-08 05:20:33.529609,Infrastructure,Email,Software,Network,Cannot access VPN,Closed,Jessica Taylor,Jessica Taylor,2024-09-13 03:12:25.489746,Troubleshooting steps for VPN,
+INC100048,Medium,2024-12-04 09:43:37.502985,Database Admin,Connectivity,Email,,Configuration change needed for laptop,New,Robert Jones,Patricia Thomas,,Troubleshooting steps for laptop,
+INC100049,Medium,2024-08-29 23:03:11.799939,Database Admin,Mobile Device,,,Cannot access SharePoint,Closed,David Williams,Mary Johnson,2024-09-03 11:31:49.843164,Troubleshooting steps for SharePoint,
+INC100050,High,2024-08-21 16:48:38.025195,Cloud Team,Software,Access,,Printer reset issue,Closed,Jessica Taylor,John Smith,2024-08-24 00:20:51.556424,Troubleshooting steps for desktop computer,
+INC100051,Medium,2025-03-27 15:05:25.103524,Network Support,Printer,,Password Reset,Need assistance with network drive,In Progress,Daniel Jackson,David Williams,,,
+INC100052,Medium,2024-09-15 08:07:37.180347,Desktop Support,Mobile Device,,,Unable to login to printer,In Progress,David Williams,Susan Miller,,Troubleshooting steps for printer,
+INC100053,Low,2024-07-23 18:42:51.488877,Service Desk,Mobile Device,Password Reset,,Configuration change needed for video conferencing,Resolved,John Smith,James Anderson,2024-07-24 04:44:43.536319,Troubleshooting steps for video conferencing,EXT-9998
+INC100054,High,2024-05-14 14:30:42.553058,Cloud Team,Software,Application,Mobile Device,Issue with website after recent update,Closed,John Smith,,2024-05-15 12:50:27.261909,Troubleshooting steps for website,EXT-3522
+INC100055,Medium,2024-09-25 16:36:19.281323,Database Admin,Application,Password Reset,,Need assistance with website,Closed,Barbara White,Jennifer Wilson,2024-09-26 11:21:12.864994,,EXT-7798
+INC100056,Medium,2024-07-29 20:08:35.031729,Network Support,Email,Database,,Configuration change needed for printer,In Progress,Patricia Thomas,Robert Jones,,Troubleshooting steps for printer,
+INC100057,Low,2025-02-08 04:32:48.047347,Infrastructure,Access,Printer,,Unable to login to CRM,In Progress,Barbara White,,,Troubleshooting steps for CRM,
+INC100058,Low,2024-05-22 07:16:42.743027,Email Team,Database,,Network,Configuration change needed for laptop,Open,Barbara White,Mary Johnson,,Troubleshooting steps for laptop,EXT-8692
+INC100059,High,2025-01-07 00:59:50.950463,Infrastructure,Performance,,,video conferencing is not responding,Closed,Mary Johnson,Barbara White,2025-01-09 12:08:08.890253,Troubleshooting steps for video conferencing,EXT-5708
+INC100060,Medium,2025-03-26 20:17:13.271224,Desktop Support,Printer,,Printer,Configuration change needed for VPN,Resolved,James Anderson,Patricia Thomas,2025-03-27 18:50:09.364877,Troubleshooting steps for VPN,
+INC100061,Medium,2024-06-24 22:00:19.586231,Server Team,Network,,Security,Issue with mobile app after recent update,Closed,David Williams,Mary Johnson,2024-06-26 07:04:08.232415,Troubleshooting steps for mobile app,
+INC100062,Medium,2025-02-18 21:16:28.820578,Service Desk,Network,Security,,customer portal is not responding,In Progress,Mary Johnson,Jennifer Wilson,,Troubleshooting steps for customer portal,
+INC100063,Medium,2024-06-22 08:45:28.380865,Database Admin,Hardware,,,Unable to login to internal portal,Closed,Barbara White,,2024-07-02 09:06:55.683585,Troubleshooting steps for internal portal,
+INC100064,Medium,2025-02-20 08:32:44.953109,Application Support,Access,,,Issue with internal portal after recent update,In Progress,James Anderson,Lisa Brown,,Troubleshooting steps for internal portal,
+INC100065,High,2024-11-18 16:46:46.806849,Email Team,Database,Printer,,Need access to customer portal,Resolved,Patricia Thomas,,2024-11-20 00:59:59.625598,Troubleshooting steps for customer portal,
+INC100066,High,2025-01-24 21:46:33.895554,Cloud Team,Printer,Printer,,Configuration change needed for accounting software,Closed,Robert Jones,Patricia Thomas,2025-01-26 11:40:48.632897,Troubleshooting steps for accounting software,
+INC100067,Low,2025-03-15 20:07:08.115731,Infrastructure,Hardware,,Application,Need access to laptop,In Progress,Robert Jones,William Moore,,,EXT-4830
+INC100068,Medium,2024-09-15 20:58:23.873540,Application Support,Password Reset,Hardware,,Need access to laptop,Closed,Lisa Brown,James Anderson,2024-09-21 02:41:29.309209,Troubleshooting steps for laptop,EXT-9807
+INC100069,Medium,2024-05-16 07:15:10.804880,Service Desk,Application,Application,,New user setup for file share,Closed,Jessica Taylor,Patricia Thomas,2024-05-16 19:45:57.187373,Troubleshooting steps for file share,EXT-8285
+INC100070,Low,2025-03-09 17:41:57.201312,Application Support,Account,Software,,CRM is not responding,Open,Joseph Harris,James Anderson,,Troubleshooting steps for CRM,EXT-1349
+INC100071,High,2024-04-15 05:54:13.277141,Email Team,Access,,,video conferencing account locked out,Cancelled,Mary Johnson,Barbara White,2024-04-15 20:30:02.666378,,EXT-3370
+INC100072,Medium,2025-03-23 05:34:30.435369,Desktop Support,Performance,Hardware,Hardware,email is running slowly,Closed,Barbara White,John Smith,2025-03-27 18:50:09.364877,Troubleshooting steps for email,EXT-2041
+INC100073,Medium,2024-09-17 14:45:02.130465,Desktop Support,Security,Email,,Issue with CRM after recent update,Closed,William Moore,,2024-09-29 14:03:03.909281,Troubleshooting steps for CRM,
+INC100074,Medium,2024-08-21 09:00:11.103185,Cloud Team,Software,Account,,file share is not responding,Resolved,Joseph Harris,Mary Johnson,2024-08-22 23:35:44.762443,Troubleshooting steps for file share,EXT-9282
+INC100075,Critical,2024-11-03 18:22:28.662735,Service Desk,Connectivity,Application,,Unable to login to laptop,Closed,Barbara White,Lisa Brown,2024-11-04 04:18:29.449365,Troubleshooting steps for laptop,EXT-3500
+INC100076,Medium,2024-12-03 11:23:17.539364,Desktop Support,Software,Password Reset,,New user setup for HR system,Open,Michael Davis,Mary Johnson,,Troubleshooting steps for HR system,
+INC100077,Low,2025-02-09 15:38:11.455658,Network Support,Email,Access,,VPN is not responding,Resolved,Jessica Taylor,Robert Jones,2025-02-11 10:41:29.944978,Troubleshooting steps for VPN,EXT-5564
+INC100078,Low,2024-10-23 07:57:07.101474,Email Team,Password Reset,Hardware,Connectivity,email needs updating,Closed,James Anderson,James Anderson,2024-10-31 08:59:35.464987,,
+INC100079,High,2024-06-01 23:56:55.048669,Desktop Support,Network,Database,Email,Cannot access database,Closed,Patricia Thomas,James Anderson,2024-06-02 14:28:59.072152,Troubleshooting steps for database,
+INC100080,Critical,2024-04-27 19:03:34.577597,Email Team,Hardware,Security,,Password reset required for laptop,Open,James Anderson,Mary Johnson,,Troubleshooting steps for laptop,
+INC100081,Medium,2024-05-07 06:13:49.221006,Service Desk,Performance,Access,,Error when trying to install,Closed,Robert Jones,John Smith,2024-05-07 08:37:49.221006,Troubleshooting steps for mobile app,EXT-9149
+INC100082,High,2024-12-25 10:40:46.761358,Security Team,Account,,Hardware,HR system showing error message: NET6621,In Progress,William Moore,Barbara White,,Troubleshooting steps for HR system,
+INC100083,Medium,2024-08-31 11:21:58.617660,Database Admin,Software,Database,Mobile Device,SharePoint is not responding,Closed,Michael Davis,John Smith,2024-09-03 13:19:48.558363,Troubleshooting steps for SharePoint,
+INC100084,Low,2024-04-25 11:47:03.915736,Security Team,Database,Printer,,Need access to network drive,Closed,Daniel Jackson,David Williams,2024-05-01 03:55:12.967904,,
+INC100085,High,2024-06-22 00:33:03.785261,Email Team,Network,Security,,database showing error message: 500,Open,Daniel Jackson,Daniel Jackson,,Troubleshooting steps for database,
+INC100086,Medium,2024-10-19 19:47:02.246268,Application Support,Network,Database,,Need assistance with laptop,Closed,Jennifer Wilson,Mary Johnson,2024-10-27 18:44:03.398268,Troubleshooting steps for laptop,EXT-5703
+INC100087,Low,2024-04-24 18:59:58.217883,Email Team,Password Reset,Printer,,Need assistance with video conferencing,Closed,William Moore,Michael Davis,2024-05-11 18:11:30.945212,Troubleshooting steps for video conferencing,
+INC100088,Medium,2025-03-12 08:29:01.674094,Application Support,Connectivity,,,SharePoint showing error message: SYS201,Closed,Mary Johnson,William Moore,2025-03-18 12:02:55.003941,Troubleshooting steps for SharePoint,
+INC100089,Medium,2024-08-16 04:36:17.985998,Network Support,Printer,Email,,database is not responding,Closed,James Anderson,James Anderson,2024-08-20 06:34:06.443674,,
+INC100090,Medium,2024-07-27 11:05:14.534083,Application Support,Email,,Account,mobile app showing error message: 0x0000007B,Open,James Anderson,Patricia Thomas,,Troubleshooting steps for mobile app,
+INC100091,Low,2024-11-27 09:03:20.155111,Service Desk,Software,Access,,Unable to login to network drive,Closed,James Anderson,James Anderson,2024-11-30 18:07:09.689628,Troubleshooting steps for network drive,
+INC100092,High,2024-05-23 08:09:20.338852,Service Desk,Printer,,Application,New user setup for network drive,Closed,William Moore,Barbara White,2024-05-24 08:47:35.329175,Troubleshooting steps for network drive,
+INC100093,Low,2024-11-10 19:33:45.140704,Network Support,Application,,,New user setup for website,Closed,Susan Miller,James Anderson,2024-11-13 07:55:46.162846,Troubleshooting steps for website,
+INC100094,Low,2024-09-14 23:24:45.485174,Email Team,Security,Network,,Password reset required for mobile app,In Progress,Jennifer Wilson,Daniel Jackson,,Troubleshooting steps for mobile app,EXT-8873
+INC100095,Medium,2025-02-09 20:06:01.344044,Service Desk,Mobile Device,,Application,Need access to SharePoint,Open,Mary Johnson,Robert Jones,,,
+INC100096,Low,2025-02-13 16:11:33.908848,Infrastructure,Account,,,Unable to login to database,Resolved,Susan Miller,Lisa Brown,2025-02-13 21:20:21.810754,Troubleshooting steps for database,EXT-5700
+INC100097,Medium,2025-02-25 15:13:35.032857,Cloud Team,Security,Connectivity,,Printer login issue,Closed,Jessica Taylor,John Smith,2025-02-26 20:22:30.415619,Troubleshooting steps for database,EXT-2996
+INC100098,Medium,2024-04-14 05:07:15.913449,Cloud Team,Software,Access,,Printer install issue,Closed,Mary Johnson,Barbara White,2024-04-14 07:31:15.913449,Troubleshooting steps for printer,
+INC100099,High,2024-10-22 01:51:00.313360,Service Desk,Database,Security,Application,network drive needs updating,Closed,Mary Johnson,,2024-10-24 02:19:00.163829,Troubleshooting steps for network drive,EXT-2106
+INC100100,Medium,2024-07-31 15:18:20.789278,Email Team,Connectivity,Mobile Device,,CRM is running slowly,Closed,Daniel Jackson,Susan Miller,2024-08-02 16:54:13.620490,Troubleshooting steps for CRM,
+INC100101,Critical,2025-01-17 23:33:20.259623,Cloud Team,Hardware,Mobile Device,,Cannot access ERP system,Closed,Robert Jones,Lisa Brown,2025-01-20 16:33:44.600795,Troubleshooting steps for ERP system,EXT-6848
+INC100102,Critical,2025-02-05 11:10:10.061755,Database Admin,Software,Network,,Unable to login to mobile app,Closed,Daniel Jackson,Susan Miller,2025-02-07 17:10:40.167470,,
+INC100103,Medium,2025-01-14 04:53:35.449179,Email Team,Mobile Device,Email,,Password reset required for accounting software,Open,David Williams,William Moore,,Troubleshooting steps for accounting software,
+INC100104,Critical,2024-08-03 02:23:15.045111,Application Support,Password Reset,Printer,,CRM showing error message: BSOD0x124,Closed,Michael Davis,Robert Jones,2024-08-04 02:44:30.775027,Troubleshooting steps for CRM,
+INC100105,Medium,2024-11-30 06:53:40.032125,Security Team,Printer,Performance,,mobile app is not responding,Open,James Anderson,Susan Miller,,Troubleshooting steps for mobile app,EXT-3255
+INC100106,Medium,2024-10-07 00:54:16.189005,Security Team,Software,Printer,Security,printer is running slowly,Closed,John Smith,Patricia Thomas,2024-10-19 06:40:36.418246,Troubleshooting steps for printer,
+INC100107,High,2025-03-27 06:49:28.573813,Desktop Support,Security,Mobile Device,,New user setup for laptop,Open,David Williams,Joseph Harris,,Troubleshooting steps for laptop,
+INC100108,High,2024-07-11 18:24:34.314558,Server Team,Printer,Printer,,Error when trying to connect,Open,Susan Miller,William Moore,,Troubleshooting steps for VPN,
+INC100109,High,2025-03-21 14:01:14.461100,Desktop Support,Email,,Database,New user setup for printer,Closed,Michael Davis,Patricia Thomas,2025-03-25 05:59:01.296001,Troubleshooting steps for printer,
+INC100110,Low,2024-07-31 12:47:07.489117,Email Team,Network,Network,Connectivity,Unable to login to network drive,Closed,Daniel Jackson,David Williams,2024-08-01 12:38:54.879063,,
+INC100111,Critical,2024-07-09 11:05:56.877377,Service Desk,Email,Password Reset,,Password reset required for video conferencing,Open,David Williams,James Anderson,,Troubleshooting steps for video conferencing,
+INC100112,Low,2024-11-03 15:51:09.963208,Network Support,Software,Performance,Performance,internal portal account locked out,Closed,John Smith,James Anderson,2024-11-14 14:01:48.452906,Troubleshooting steps for internal portal,
+INC100113,Low,2024-06-25 03:57:59.155102,Cloud Team,Software,Network,,laptop is running slowly,Resolved,Patricia Thomas,John Smith,2024-06-29 20:22:00.409063,Troubleshooting steps for laptop,
+INC100114,High,2025-03-18 19:06:47.862801,Service Desk,Software,Software,Application,Need assistance with VPN,In Progress,Susan Miller,Lisa Brown,,Troubleshooting steps for VPN,
+INC100115,Low,2025-02-20 03:04:43.607489,Application Support,Access,Software,,Need assistance with network drive,Closed,Daniel Jackson,David Williams,2025-03-07 23:20:42.088187,,EXT-6781
+INC100116,High,2024-04-14 13:04:52.244947,Cloud Team,Email,,,Configuration change needed for VPN,Closed,William Moore,John Smith,2024-04-19 21:32:15.340721,Troubleshooting steps for VPN,
+INC100117,Medium,2024-06-06 20:00:58.965208,Service Desk,Security,Printer,,Password reset required for VPN,Open,Daniel Jackson,William Moore,,Troubleshooting steps for VPN,EXT-9341
+INC100118,Critical,2024-08-21 06:59:12.454607,Application Support,Printer,Database,,Need assistance with file share,New,Jennifer Wilson,William Moore,,Troubleshooting steps for file share,
+INC100119,Medium,2025-01-29 08:01:43.746232,Service Desk,Account,Software,,Issue with customer portal after recent update,Closed,Jennifer Wilson,Patricia Thomas,2025-01-29 10:25:43.746232,Troubleshooting steps for customer portal,
+INC100120,Critical,2024-12-03 22:05:53.949208,Email Team,Password Reset,Mobile Device,,Cannot access printer,Resolved,Lisa Brown,Patricia Thomas,2024-12-04 21:53:50.025564,Troubleshooting steps for printer,
+INC100121,High,2024-12-08 11:23:56.818634,Infrastructure,Network,Mobile Device,,Error when trying to configure,Resolved,Michael Davis,Patricia Thomas,2024-12-10 20:07:24.436199,Troubleshooting steps for desktop computer,EXT-6325
+INC100122,Medium,2025-03-27 02:23:32.142912,Server Team,Security,,,video conferencing is not responding,In Progress,Joseph Harris,William Moore,,Troubleshooting steps for video conferencing,
+INC100123,High,2024-06-05 23:04:12.202772,Security Team,Email,Account,,New user setup for ERP system,Closed,Daniel Jackson,Robert Jones,2024-06-07 15:21:12.813263,Troubleshooting steps for ERP system,EXT-9899
+INC100124,Low,2024-08-13 08:57:25.194844,Server Team,Email,Security,Mobile Device,New user setup for database,Closed,John Smith,Robert Jones,2024-08-17 18:05:22.930337,,
+INC100125,Medium,2024-05-16 21:20:49.267479,Security Team,Hardware,Connectivity,,website needs updating,Closed,James Anderson,Joseph Harris,2024-05-17 03:49:02.256535,Troubleshooting steps for website,
+INC100126,High,2025-03-19 17:20:01.573245,Cloud Team,Security,,Password Reset,customer portal account locked out,Closed,James Anderson,Lisa Brown,2025-03-22 07:37:26.301858,Troubleshooting steps for customer portal,
+INC100127,Low,2024-04-10 09:34:06.868760,Server Team,Hardware,,Hardware,printer account locked out,Resolved,Barbara White,Michael Davis,2024-04-20 18:23:07.050110,Troubleshooting steps for printer,EXT-6489
+INC100128,Low,2024-07-09 15:35:45.633388,Cloud Team,Network,Security,,Need assistance with internal portal,Closed,Barbara White,William Moore,2024-07-10 13:06:29.497410,Troubleshooting steps for internal portal,
+INC100129,Medium,2024-07-13 11:14:54.354389,Email Team,Mobile Device,Performance,Network,Unable to login to desktop computer,Open,James Anderson,Joseph Harris,,,EXT-7284
+INC100130,Medium,2024-06-21 18:00:07.593226,Database Admin,Password Reset,Software,,Cannot access internal portal,Cancelled,Patricia Thomas,Jessica Taylor,2024-06-27 15:37:14.137736,Troubleshooting steps for internal portal,
+INC100131,Medium,2025-02-14 19:58:34.757084,Database Admin,Database,,,Error when trying to download,Closed,Jessica Taylor,Lisa Brown,2025-02-17 20:48:28.669387,,
+INC100132,Low,2025-01-14 12:18:43.425652,Email Team,Mobile Device,,Mobile Device,laptop needs updating,Closed,Daniel Jackson,Mary Johnson,2025-01-17 21:08:47.172214,Troubleshooting steps for laptop,
+INC100133,High,2024-05-21 11:32:34.064153,Desktop Support,Performance,,,Issue with printer after recent update,Closed,Lisa Brown,Patricia Thomas,2024-05-23 06:23:23.165527,Troubleshooting steps for printer,EXT-8575
+INC100134,High,2024-11-28 08:16:51.937679,Database Admin,Mobile Device,Software,,Error when trying to login,New,John Smith,Patricia Thomas,,,
+INC100135,High,2024-09-16 02:10:46.754745,Server Team,Printer,Mobile Device,,desktop computer showing error message: NULL REF,Open,James Anderson,Patricia Thomas,,Troubleshooting steps for desktop computer,
+INC100136,High,2025-02-09 23:55:35.532122,Desktop Support,Network,,,file share needs updating,Closed,William Moore,Michael Davis,2025-02-14 11:58:13.049624,Troubleshooting steps for file share,
+INC100137,High,2024-08-13 05:17:52.060791,Server Team,Email,Hardware,Software,Printer login issue,Resolved,Lisa Brown,Joseph Harris,2024-08-15 22:03:40.572799,Troubleshooting steps for VPN,
+INC100138,Critical,2024-12-09 11:37:25.076729,Infrastructure,Security,Connectivity,,Error when trying to update,Closed,Lisa Brown,William Moore,2024-12-14 12:25:31.600539,Troubleshooting steps for CRM,
+INC100139,Low,2024-06-22 06:06:55.005596,Service Desk,Access,,,Password reset required for CRM,Cancelled,Michael Davis,Robert Jones,2024-07-08 03:20:02.627150,Troubleshooting steps for CRM,
+INC100140,Medium,2025-03-06 11:07:58.385336,Application Support,Connectivity,Mobile Device,Mobile Device,customer portal is running slowly,Closed,Michael Davis,Michael Davis,2025-03-13 11:37:36.768355,,
+INC100141,Low,2024-10-19 01:20:12.671050,Server Team,Application,,Connectivity,Error when trying to setup,Closed,Lisa Brown,Robert Jones,2024-11-07 05:02:51.906657,Troubleshooting steps for accounting software,
+INC100142,Critical,2024-11-03 14:22:05.826006,Email Team,Connectivity,,,Error when trying to connect,Open,James Anderson,,,Troubleshooting steps for printer,EXT-2922
+INC100143,Medium,2024-12-25 09:29:52.681937,Email Team,Connectivity,Account,,Printer configure issue,Closed,Lisa Brown,Michael Davis,2025-01-01 20:46:15.370705,Troubleshooting steps for website,
+INC100144,Low,2024-09-13 21:01:53.618760,Application Support,Access,Email,,Unable to login to CRM,Closed,Susan Miller,Susan Miller,2024-09-15 18:02:55.926700,Troubleshooting steps for CRM,EXT-4214
+INC100145,Medium,2024-07-26 04:27:21.023475,Cloud Team,Account,,,internal portal is not responding,Closed,James Anderson,James Anderson,2024-07-29 12:55:59.437672,Troubleshooting steps for internal portal,
+INC100146,Medium,2024-05-17 20:52:21.522195,Service Desk,Performance,,,Cannot access database,Open,John Smith,William Moore,,Troubleshooting steps for database,
+INC100147,Medium,2024-03-31 02:54:54.500754,Email Team,Performance,Account,,Issue with printer after recent update,In Progress,James Anderson,Joseph Harris,,Troubleshooting steps for printer,EXT-5697
+INC100148,Low,2024-04-03 01:00:18.322867,Server Team,Software,Database,Application,file share needs updating,Closed,Joseph Harris,Mary Johnson,2024-04-10 07:03:59.158251,,
+INC100149,Medium,2024-06-24 13:20:13.516144,Desktop Support,Performance,Account,,CRM account locked out,In Progress,Barbara White,James Anderson,,Troubleshooting steps for CRM,EXT-8109
+INC100150,High,2024-11-18 04:13:24.146801,Desktop Support,Account,Software,,Error when trying to reset,Cancelled,Joseph Harris,John Smith,2024-11-20 06:24:52.287391,Troubleshooting steps for ERP system,
+INC100151,Low,2024-06-01 05:58:52.978425,Security Team,Password Reset,Access,,Configuration change needed for mobile app,New,David Williams,Daniel Jackson,,Troubleshooting steps for mobile app,
+INC100152,Medium,2024-08-14 21:19:43.572196,Desktop Support,Account,Printer,,Cannot access VPN,Closed,Patricia Thomas,Susan Miller,2024-08-24 00:14:55.079494,,
+INC100153,Medium,2024-11-14 05:45:10.634233,Security Team,Database,Password Reset,Access,Unable to login to SharePoint,Resolved,William Moore,Michael Davis,2024-11-19 15:26:50.970400,Troubleshooting steps for SharePoint,EXT-3527
+INC100154,High,2024-12-22 18:12:58.558043,Network Support,Email,Application,,internal portal account locked out,Open,Jennifer Wilson,Susan Miller,,Troubleshooting steps for internal portal,EXT-6798
+INC100155,Medium,2024-10-16 01:48:05.147895,Infrastructure,Hardware,,Account,Unable to login to database,Closed,Robert Jones,Michael Davis,2024-10-20 04:11:33.958066,Troubleshooting steps for database,EXT-5933
+INC100156,High,2024-07-03 18:04:46.119775,Database Admin,Application,,,database account locked out,Open,Robert Jones,Jennifer Wilson,,Troubleshooting steps for database,
+INC100157,Critical,2024-05-16 05:43:27.046743,Email Team,Application,,,laptop is not responding,In Progress,Daniel Jackson,,,Troubleshooting steps for laptop,
+INC100158,High,2025-03-08 12:59:57.449577,Infrastructure,Database,Application,Printer,New user setup for printer,In Progress,Robert Jones,Patricia Thomas,,Troubleshooting steps for printer,
+INC100159,Medium,2024-10-29 22:44:41.116997,Service Desk,Hardware,Mobile Device,,New user setup for ERP system,Closed,Patricia Thomas,Jennifer Wilson,2024-10-31 16:04:07.665176,Troubleshooting steps for ERP system,EXT-5961
+INC100160,Medium,2024-06-24 02:56:28.908543,Infrastructure,Software,,,Need assistance with mobile app,Closed,Jennifer Wilson,Jessica Taylor,2024-07-06 23:23:25.612314,,
+INC100161,Medium,2025-01-18 06:33:26.789890,Desktop Support,Printer,Performance,,HR system showing error message: BSOD0x124,Closed,Lisa Brown,James Anderson,2025-01-23 00:22:38.201658,Troubleshooting steps for HR system,
+INC100162,Critical,2024-08-31 21:37:35.396998,Service Desk,Connectivity,Printer,,Issue with website after recent update,In Progress,William Moore,William Moore,,Troubleshooting steps for website,
+INC100163,High,2024-09-19 23:54:38.285402,Desktop Support,Software,Security,,HR system is running slowly,Closed,Barbara White,Patricia Thomas,2024-09-21 12:21:55.567673,Troubleshooting steps for HR system,
+INC100164,Critical,2024-04-21 07:16:59.352424,Network Support,Mobile Device,Database,,Need access to SharePoint,Closed,Susan Miller,,2024-04-22 00:41:56.184008,Troubleshooting steps for SharePoint,
+INC100165,Medium,2024-06-03 02:38:00.546051,Network Support,Connectivity,,Printer,Error when trying to install,Resolved,Jessica Taylor,Joseph Harris,2024-06-05 13:43:12.846340,Troubleshooting steps for laptop,
+INC100166,Medium,2025-01-13 14:28:35.691656,Security Team,Security,Application,,printer showing error message: BSOD0x124,In Progress,Mary Johnson,Robert Jones,,Troubleshooting steps for printer,
+INC100167,Low,2024-11-08 02:55:58.820430,Database Admin,Password Reset,Database,,file share showing error message: ERR404,Closed,Jessica Taylor,Mary Johnson,2024-11-10 03:59:38.099206,Troubleshooting steps for file share,EXT-7286
+INC100168,Medium,2024-08-29 04:39:20.396338,Server Team,Account,Mobile Device,,Password reset required for file share,Closed,David Williams,Jennifer Wilson,2024-09-07 10:03:49.197311,Troubleshooting steps for file share,
+INC100169,Medium,2025-03-14 13:58:43.528667,Cloud Team,Application,,Hardware,Need assistance with printer,Resolved,Patricia Thomas,Barbara White,2025-03-18 17:58:39.560305,Troubleshooting steps for printer,EXT-8492
+INC100170,Medium,2024-10-20 05:56:02.308834,Service Desk,Software,Connectivity,,Password reset required for video conferencing,Resolved,Jessica Taylor,Mary Johnson,2024-10-28 21:27:47.347081,Troubleshooting steps for video conferencing,
+INC100171,High,2024-11-21 09:00:00.171135,Network Support,Security,,Printer,Configuration change needed for database,Closed,Robert Jones,Susan Miller,2024-12-04 03:32:17.248239,Troubleshooting steps for database,
+INC100172,Medium,2024-11-05 12:43:45.572285,Security Team,Mobile Device,Connectivity,Password Reset,Cannot access HR system,Closed,Lisa Brown,Daniel Jackson,2024-11-10 01:44:42.729893,,
+INC100173,Critical,2024-11-30 17:29:52.591835,Infrastructure,Hardware,Database,,file share showing error message: 403,Cancelled,Robert Jones,Barbara White,2024-11-30 20:54:52.478430,Troubleshooting steps for file share,
+INC100174,High,2024-10-24 13:05:00.857013,Cloud Team,Software,Database,,Printer upload issue,Resolved,James Anderson,Daniel Jackson,2024-10-28 00:12:49.765265,Troubleshooting steps for database,
+INC100175,Critical,2025-01-31 00:01:18.157888,Application Support,Mobile Device,Database,,mobile app needs updating,Cancelled,Mary Johnson,Daniel Jackson,2025-02-01 17:49:55.520030,Troubleshooting steps for mobile app,
+INC100176,High,2024-09-20 22:23:45.505689,Network Support,Hardware,Security,Application,laptop account locked out,Closed,Mary Johnson,James Anderson,2024-09-27 13:28:02.739963,Troubleshooting steps for laptop,EXT-5945
+INC100177,Low,2024-05-24 19:28:42.635075,Application Support,Email,Connectivity,,SharePoint showing error message: NET6621,In Progress,Mary Johnson,Susan Miller,,Troubleshooting steps for SharePoint,
+INC100178,Medium,2024-03-28 04:21:07.038099,Security Team,Account,,,Cannot access email,Open,James Anderson,Jennifer Wilson,,Troubleshooting steps for email,EXT-7276
+INC100179,Low,2024-04-29 09:22:34.335095,Application Support,Email,Account,,file share account locked out,Open,David Williams,Michael Davis,,Troubleshooting steps for file share,
+INC100180,Medium,2024-06-13 13:12:06.080969,Email Team,Performance,Application,,Error when trying to access,Closed,Jennifer Wilson,Barbara White,2024-06-20 12:44:12.128997,Troubleshooting steps for database,EXT-2380
+INC100181,Medium,2024-06-26 08:46:44.734209,Database Admin,Printer,Application,Hardware,Configuration change needed for customer portal,Closed,Patricia Thomas,John Smith,2024-07-01 00:49:48.882344,Troubleshooting steps for customer portal,EXT-7322
+INC100182,Medium,2024-05-07 22:28:13.508751,Service Desk,Hardware,Account,,file share is not responding,Closed,Susan Miller,Joseph Harris,2024-05-17 01:36:45.475092,,
+INC100183,Critical,2024-04-02 21:02:06.339123,Network Support,Hardware,Application,,customer portal needs updating,In Progress,Daniel Jackson,Michael Davis,,Troubleshooting steps for customer portal,
+INC100184,Critical,2024-05-22 12:18:59.840695,Security Team,Printer,,,mobile app is not responding,Open,David Williams,William Moore,,Troubleshooting steps for mobile app,
+INC100185,High,2025-03-10 18:51:54.038595,Infrastructure,Software,,,Issue with CRM after recent update,In Progress,Jennifer Wilson,Jessica Taylor,,Troubleshooting steps for CRM,
+INC100186,Low,2024-05-26 14:00:35.214056,Database Admin,Network,,,New user setup for internal portal,Closed,Susan Miller,David Williams,2024-05-27 12:37:21.855928,Troubleshooting steps for internal portal,EXT-2262
+INC100187,Medium,2024-09-24 21:05:19.098816,Email Team,Network,,Account,Password reset required for VPN,Open,Susan Miller,David Williams,,,EXT-1753
+INC100188,Medium,2024-09-15 23:29:37.461801,Network Support,Account,Connectivity,,New user setup for desktop computer,Open,Daniel Jackson,Joseph Harris,,Troubleshooting steps for desktop computer,EXT-1862
+INC100189,Low,2024-06-01 05:53:32.795064,Infrastructure,Software,Security,Access,Configuration change needed for customer portal,Cancelled,Joseph Harris,Jennifer Wilson,2024-06-04 00:51:57.693015,Troubleshooting steps for customer portal,
+INC100190,Medium,2024-06-24 07:52:18.185582,Security Team,Connectivity,Account,,website account locked out,Cancelled,Joseph Harris,William Moore,2024-07-07 19:09:54.049316,,
+INC100191,Medium,2024-03-28 07:38:36.275207,Database Admin,Software,Email,Access,Error when trying to download,Closed,Lisa Brown,William Moore,2024-04-15 07:07:49.748559,Troubleshooting steps for desktop computer,
+INC100192,Low,2024-08-10 17:51:56.259277,Desktop Support,Account,Application,,Configuration change needed for mobile app,Open,David Williams,James Anderson,,Troubleshooting steps for mobile app,
+INC100193,Medium,2025-02-28 18:57:48.356263,Application Support,Database,Network,Security,Error when trying to connect,Closed,Jennifer Wilson,Robert Jones,2025-03-08 08:37:27.810963,Troubleshooting steps for database,
+INC100194,High,2025-03-14 21:02:09.965760,Database Admin,Mobile Device,Access,,customer portal is running slowly,In Progress,Mary Johnson,Mary Johnson,,Troubleshooting steps for customer portal,EXT-6828
+INC100195,Critical,2024-08-19 09:56:14.739946,Server Team,Hardware,Security,Printer,Need assistance with video conferencing,In Progress,Michael Davis,Barbara White,,Troubleshooting steps for video conferencing,
+INC100196,High,2025-03-21 10:07:29.766160,Application Support,Performance,Performance,,Need access to internal portal,Closed,James Anderson,James Anderson,2025-03-27 18:50:09.364877,,
+INC100197,Critical,2024-07-26 19:12:46.735409,Server Team,Password Reset,Database,Network,New user setup for mobile app,Resolved,Michael Davis,Barbara White,2024-07-27 06:47:30.228781,Troubleshooting steps for mobile app,EXT-5026
+INC100198,Medium,2024-11-19 00:59:41.002228,Cloud Team,Hardware,,Printer,Unable to login to file share,Closed,Mary Johnson,Robert Jones,2024-11-24 04:28:49.156337,Troubleshooting steps for file share,
+INC100199,Medium,2024-12-13 03:57:46.769325,Application Support,Password Reset,Printer,,Unable to login to internal portal,Closed,William Moore,Susan Miller,2024-12-15 02:02:40.474029,,
+INC100200,Low,2025-01-01 16:22:23.989125,Desktop Support,Access,,,Password reset required for video conferencing,Cancelled,James Anderson,Lisa Brown,2025-01-11 16:49:21.785504,,
