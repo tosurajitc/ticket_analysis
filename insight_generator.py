@@ -1,4 +1,4 @@
-# insight_generator.py
+
 # Module for generating insights from ticket data using LLM
 
 import pandas as pd

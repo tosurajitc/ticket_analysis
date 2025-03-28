@@ -10,12 +10,33 @@ In the terminal, initialize a new Git repository: git init
 Add all files in your folder to the staging area: git add .
 Commit the files with a message: git commit -m "Initial commit"
 Link your local repository to the GitHub repository you mentioned (first time required): git remote add origin https://github.com/tosurajitc/Qualitative_Ticket_Analysis.git
-Push the changes to the remote repository: git push -u origin main (or master)
+Push the changes to the remote repository: git push -u origin master (or master)
 
 If git hub fails then:
 git remote rename origin old-origin
 git remote add origin https://github.com/tosurajitc/Qualitative_Ticket_Analysis.git
 
+Streamlit Deployment: https://tosurajitc-qualitative-ticket-analysis-main-7xqbw2.streamlit.app/
 
 
 
+
+ticket-analysis-system/
+├── main.py                    # Main application entry point
+├── requirements.txt           # Dependencies
+├── .env                       # Environment variables
+├── data_extraction.py         # Existing module
+├── data_processing.py         # Existing module
+├── insight_generator.py       # Existing module
+├── chart_generator.py         # Existing module
+├── automation_analyzer.py     # Existing module
+└── mainsrc/                   # New source code folder
+    ├── __init__.py            # Makes the folder a proper package
+    ├── data_module.py         # Wrapper for data_extraction & data_processing
+    ├── analysis_module.py     # New statistical analysis
+    ├── visualization_module.py # Wrapper for chart_generator
+    ├── insights_module.py     # Wrapper for insight_generator
+    ├── automation_module.py   # Enhanced wrapper for automation_analyzer
+    ├── questions_module.py    # New predefined questions UI
+    ├── chat_module.py         # New chat interface
+    └── utils.py               # Shared utilities

@@ -1,4 +1,4 @@
-# query_processor.py
+
 # Module for processing user queries about ticket data
 
 import pandas as pd
