@@ -20,23 +20,36 @@ Streamlit Deployment: https://tosurajitc-qualitative-ticket-analysis-main-7xqbw2
 
 
 
+# Ticket Data Analysis and Automation Insight Generation
 
-ticket-analysis-system/
-├── main.py                    # Main application entry point
-├── requirements.txt           # Dependencies
-├── .env                       # Environment variables
-├── data_extraction.py         # Existing module
-├── data_processing.py         # Existing module
-├── insight_generator.py       # Existing module
-├── chart_generator.py         # Existing module
-├── automation_analyzer.py     # Existing module
-└── mainsrc/                   # New source code folder
-    ├── __init__.py            # Makes the folder a proper package
-    ├── data_module.py         # Wrapper for data_extraction & data_processing
-    ├── analysis_module.py     # New statistical analysis
-    ├── visualization_module.py # Wrapper for chart_generator
-    ├── insights_module.py     # Wrapper for insight_generator
-    ├── automation_module.py   # Enhanced wrapper for automation_analyzer
-    ├── questions_module.py    # New predefined questions UI
-    ├── chat_module.py         # New chat interface
-    └── utils.py               # Shared utilities
+The solution processes large ticket datasets (100,000+ rows) through a coordinated system of specialized agents 
+that work together to extract insights and identify automation opportunities.
+
+When processing begins, the **DataProcessingAgent** loads, cleans, and chunks the data into manageable segments. 
+It handles missing values and standardizes column names, making the data ready for analysis.
+
+Next, the **AnalysisAgent** performs a comprehensive examination of the data, analyzing basic statistics, 
+time dimensions, categories, priorities, and status distributions. It also examines text fields using LLM-based 
+analysis to extract common themes and patterns from ticket descriptions.
+
+The **VisualizationAgent** creates visual representations of the data patterns, identifying meaningful columns 
+and generating charts that highlight key distributions and relationships in the data.
+
+For automation insights, the **AutomationRecommendationAgent** examines patterns in categories, text fields, 
+time data, and workflows. It identifies repetitive patterns that suggest automation opportunities, 
+then uses the LLM to generate specific, actionable automation recommendations with implementation plans.
+
+The **QualitativeAnswerAgent** generates answers to strategic questions about the data, providing deeper 
+insights into automation potential by analyzing patterns that may not be immediately obvious from statistical analysis alone.
+
+All these agents are orchestrated by the **SupervisorAgent**, which manages the workflow, handles errors, 
+and ensures each agent has the necessary data. To handle large datasets efficiently, the system employs:
+
+1. Data chunking to process data in manageable batches
+2. Rate limiting to manage API calls to the LLM
+3. Parallel processing where appropriate
+4. Robust error handling with fallback mechanisms
+5. JSON serialization utilities to handle complex data types
+
+The result is a comprehensive analysis that identifies automation opportunities by detecting patterns in 
+large volumes of ticket data, producing practical, data-driven recommendations for improving operational efficiency.

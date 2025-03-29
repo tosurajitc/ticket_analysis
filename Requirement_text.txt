@@ -1,24 +1,44 @@
-We need to create a Agentic AI based solution to Generate Qualitative ticket analysis
+We need to create a Agentic AI based solution to Generate Qualitative ticket analysis, the ticket data may have different column names, the objective is to create a generic solution which shall be applicable for any size and any format of ticket data.
 
-1. upload ticket data in either .csv or .xls format
-2. Generate Data insight and charts (Pi charts, Bar charts) on the ticket data
-3. generate 10 pre defined questions based on the ticket data which shall give summarized answer of the questions and the automation scope against the questions solution. If there is no automation possible then mention that as a message.
-4. Suggest 5 best Automation opportunities in detail which shall cover
+
+Upload ticket data in either .csv or .xls format - in the side panel.
+1. Data visualisation: Generate Data insight and charts (Pi charts, Bar charts) on the ticket data
+3. Qualitative Questions: generate 10 qualitative questions based on the ticket data which shall give summarized answer of the questions and the automation scope against the questions solution. If there is no automation possible then mention that as a message. Each question shall have the below details part of the answer, Let me share 5 questions, rest all questions can be based on the data decided by the LLM model, which shall change as the ticket data changes. These questions shall appear as a bold text and the solution can have as a dropdown.
+Which category of incidents consume the greatest number of hours?
+Which category of incidents require datafix?
+Which issues are specific to a particular country?
+Which incidents indicate escalation?
+How many customer facing documents failed in the last year?
+The answer to these question shall contain the below details: Entire answer set (including option a to e) shall be within 500 words.
+	a. Answer to the question which shall have relevance to the Question and not more than 3 lines.
+	b. Automation scope
+	c. Justification for the automation
+	d. What kind of automation (AI, RPA,  etc.)
+	e. Implementation plan for the automation
+4. Automation Suggestions: Suggest 5 best Automation opportunities in detail which shall cover. The automation opportunities shall come based on the data, these suggestions are not pre defined. If data varies the suggestions shall change accordingly. 
 	a. Automation scope
 	b. Justification for the automation
-	c. What kind of automation (AI, RPA, scripting etc.)
+	c. What kind of automation (AI, RPA,  etc.)
 	d. Implementation plan for the automation
-5. Chat interface for user query prompt.
+	e. Impact it can have 
+5. Chat interface: for user query prompt. Response to the chat prompt shall be from the ticket data uploaded. 
+
+
+Points to note:
 
 The ticket data may be big hence we have to create chunks of 500/1000 rows and process the data accordingly to accommodate the entire data and generate insight. 
 Insight shall be always on the entire data set not on the chunks.
 There shall be no <Think> </think> block in any of the insight.
 
-We can plan for 1. data extraction module, 1 Data processing module,  1 Insight generation agent from the data, 1 module to generate charts and diagrams and another module shall process the top 5 automation suggestions, and the last module shall help users questions as input prompt processing.  All these module can trigger the Insight generation agent as required. 
+We can plan for 1. data extraction module (to create chunks of 500/1000 rows and process the data accordingly)  1 Insight generation agent from the data, 1 module to generate charts and diagrams and another module shall process the top 5 automation suggestions, and the last module shall help users questions as input prompt processing.  All these module can trigger the Insight generation agent as required. 
 
 The API details shall be in the .env file and we are using GROQ API
-UI is streamlit and we shall use seaborn and matplotlib for charts visualisation.
-I suggest to have 4 tabs in the main mage to navigate to 4 functions. File upload can be in the left pane.
+UI is streamlit and we shall use seaborn and matplotlib for charts visualisation. We can use langchain for Agentic framework
+I suggest to have 4 tabs in the main page to navigate to 4 functions (i.e. Data visualisation, Qualitative Questions, Automation Suggestions and Chat interface). 
 We can give a suggestive texts mentioning how meaningful ticket data can generate meaningful insight. 
 
-The ticket data may have the following fields but not limited to these, (i,e, Number	Priority	Opened	Assignment Group	Subcategory	Subcategory 3	Subcategory 2	Short description	State	Opened by	Assigned to	Closed	Work notes	Correlation display	External Ref#	EBS Resolution	EBS Resolution Tier 2	EBS Resolution Tier 3	Close notes).
+We can keep an optional input field (in the UI) to provide important column names, which can help LLM model to process the data. We need to ensure not to get any JESON remittance issue.
+
+All programs shall have complete modularized approach for maintenability. 
+
+Let me first share how are we going to design this as Agentic Ai solution, where Agents shall interact with each other to generate best insight. We can have one Supervisor agent who shall check the insight generated by different agents and then validate the response before pushing them as actual response. That way we can ensure the solution received is best. 
