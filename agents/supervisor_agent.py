@@ -12,10 +12,15 @@ from utils.rate_limiter import RateLimiter
 class SupervisorAgent:
     """
     Supervisor agent that coordinates all other agents and validates their responses.
+    Supports lazy initialization of agents for improved performance.
     """
     
-    def __init__(self, llm, data_agent, analysis_agent, visualization_agent, 
-                 automation_agent, qa_agent, chat_agent):
+    def __init__(self, llm, data_agent, analysis_agent=None, visualization_agent=None, 
+                 automation_agent=None, qa_agent=None, chat_agent=None):
+        """
+        Initialize the supervisor with essential components, allowing others to be loaded later.
+        Only data_agent is required at initialization, others can be added later.
+        """
         self.llm = llm
         self.data_agent = data_agent
         self.analysis_agent = analysis_agent
@@ -34,6 +39,116 @@ class SupervisorAgent:
         self.automation_suggestions = None
         self.qualitative_answers = None
     
+    def _ensure_analysis_agent(self):
+        """Ensure analysis agent is initialized"""
+        if self.analysis_agent is None:
+            from agents.analysis_agent import AnalysisAgent
+            self.analysis_agent = AnalysisAgent(self.llm)
+        return self.analysis_agent
+    
+    def _ensure_visualization_agent(self):
+        """Ensure visualization agent is initialized"""
+        if self.visualization_agent is None:
+            from agents.visualization_agent import VisualizationAgent
+            self.visualization_agent = VisualizationAgent(self.llm)
+        return self.visualization_agent
+    
+    def _ensure_automation_agent(self):
+        """Ensure automation agent is initialized"""
+        if self.automation_agent is None:
+            from agents.automation_agent import AutomationRecommendationAgent
+            self.automation_agent = AutomationRecommendationAgent(self.llm)
+        return self.automation_agent
+    
+    def _ensure_qa_agent(self):
+        """Ensure QA agent is initialized"""
+        if self.qa_agent is None:
+            from agents.qa_agent import QualitativeAnswerAgent
+            self.qa_agent = QualitativeAnswerAgent(self.llm)
+        return self.qa_agent
+    
+    def _ensure_chat_agent(self):
+        """Ensure chat agent is initialized"""
+        if self.chat_agent is None:
+            from agents.chat_agent import ChatAgent
+            self.chat_agent = ChatAgent(self.llm)
+        return self.chat_agent
+            
+    def generate_targeted_automation_suggestions(self, selected_columns: List[str]) -> List[str]:
+        """
+        Generate targeted automation suggestions for specific columns
+        
+        Args:
+            selected_columns (List[str]): Columns to focus automation suggestions on
+        
+        Returns:
+            List[str]: Formatted automation suggestions
+        """
+        # Ensure automation agent is initialized
+        self._ensure_automation_agent()
+        
+        try:
+            # Generate automation suggestions
+            suggestions = self.automation_agent.identify_automation_opportunities(
+                self.data, 
+                make_json_serializable(self.analysis_results or {}), 
+                selected_columns
+            )
+            
+            # Format suggestions for display
+            formatted_suggestions = []
+            for suggestion in suggestions:
+                try:
+                    formatted_suggestion = self.automation_agent.format_suggestion_for_display(suggestion)
+                    formatted_suggestions.append(formatted_suggestion)
+                except Exception as format_error:
+                    print(f"Error formatting suggestion: {format_error}")
+            
+            return formatted_suggestions
+        
+        except Exception as e:
+            print(f"Error generating targeted automation suggestions: {e}")
+            return []
+
+
+    
+    def _create_focused_analysis(self, analysis_results: Dict[str, Any], selected_columns: List[str]) -> Dict[str, Any]:
+        """Create a focused version of analysis results highlighting selected columns"""
+        focused = {}
+        
+        # Copy basic stats
+        if "basic_stats" in analysis_results:
+            focused["basic_stats"] = analysis_results["basic_stats"]
+        
+        # Filter insights to focus on selected columns
+        if "insights" in analysis_results:
+            focused["insights"] = {}
+            for insight_type, insights in analysis_results["insights"].items():
+                # Filter insights to include only those mentioning selected columns
+                filtered_insights = []
+                for insight in insights:
+                    # Include insight if it mentions any selected column
+                    if any(col in str(insight) for col in selected_columns):
+                        filtered_insights.append(insight)
+                focused["insights"][insight_type] = filtered_insights
+        
+        # Filter category analysis
+        if "category_analysis" in analysis_results:
+            focused["category_analysis"] = {}
+            for key, value in analysis_results["category_analysis"].items():
+                if any(col in key for col in selected_columns):
+                    focused["category_analysis"][key] = value
+        
+        # Do the same for other analysis types
+        for analysis_type in ["priority_analysis", "status_analysis", "time_analysis", "text_analysis"]:
+            if analysis_type in analysis_results:
+                focused[analysis_type] = {}
+                for key, value in analysis_results[analysis_type].items():
+                    if any(col in key for col in selected_columns):
+                        focused[analysis_type][key] = value
+        
+        return focused
+
     def process_data(self, uploaded_file, chunk_size: int = 500, column_hints: List[str] = None) -> pd.DataFrame:
         """
         Process uploaded data file using the data agent
@@ -57,26 +172,6 @@ class SupervisorAgent:
                 # Reset analysis states when new data is loaded
                 self._reset_state()
                 
-                # Pre-generate basic analysis but don't let failures stop us
-                try:
-                    print("Pre-generating analysis...")
-                    self.analysis_results = self.analysis_agent.analyze_data(self.data)
-                    print("Analysis complete")
-                    
-                    # Try to pre-generate insights if analysis was successful
-                    if self.analysis_results:
-                        try:
-                            print("Pre-generating insights...")
-                            self.insights = self.analysis_agent.generate_insights(self.analysis_results)
-                            print("Initial insights generated")
-                        except Exception as e:
-                            print(f"Error pre-generating insights: {str(e)}")
-                            self.insights = self._create_empty_insights()
-                except Exception as e:
-                    print(f"Error pre-generating analysis: {str(e)}")
-                    self.analysis_results = {}
-                    self.insights = self._create_empty_insights()
-                
                 return self.data
             else:
                 print("Error: Data loading returned empty dataset")
@@ -84,6 +179,7 @@ class SupervisorAgent:
                 return None
         except Exception as e:
             print(f"Error processing data: {str(e)}")
+            traceback.print_exc()
             self._reset_state()
             return None
     
@@ -100,11 +196,13 @@ class SupervisorAgent:
     def _create_empty_insights(self):
         """Create empty insights structure"""
         return {
-            "volume_insights": [],
-            "time_insights": [],
-            "category_insights": [],
-            "efficiency_insights": [],
-            "automation_insights": [],
+            "insights": {
+                "volume_insights": [],
+                "time_insights": [],
+                "category_insights": [],
+                "efficiency_insights": [],
+                "automation_insights": [],
+            }
         }
         
     def generate_insights(self) -> Dict[str, Any]:
@@ -115,10 +213,13 @@ class SupervisorAgent:
             print("No data loaded. Call process_data first.")
             return {
                 "analysis": {},
-                "insights": self._create_empty_insights()
+                "insights": self._create_empty_insights()["insights"]
             }
         
         try:
+            # Ensure analysis agent is initialized
+            self._ensure_analysis_agent()
+            
             # If we already have analysis results from pre-generation, use those
             if not self.analysis_results:
                 print("Generating analysis...")
@@ -130,7 +231,7 @@ class SupervisorAgent:
                 try:
                     print("Generating insights...")
                     # We'll try to generate insights separately for each category to isolate errors
-                    basic_structure = self._create_empty_insights()
+                    basic_structure = self._create_empty_insights()["insights"]
                     
                     try:
                         basic_structure["volume_insights"] = self.analysis_agent._generate_volume_insights(self.analysis_results)
@@ -162,7 +263,7 @@ class SupervisorAgent:
                     except Exception as e:
                         print(f"Error generating automation insights: {str(e)}")
                     
-                    self.insights = basic_structure
+                    self.insights = {"insights": basic_structure}
                     print("Insights complete")
                 except Exception as e:
                     print(f"Error in overall insight generation: {str(e)}")
@@ -175,16 +276,17 @@ class SupervisorAgent:
             # Return combined results
             results = {
                 "analysis": self.analysis_results or {},
-                "insights": self.insights or self._create_empty_insights()
+                "insights": self.insights["insights"] if self.insights else self._create_empty_insights()["insights"]
             }
             
             return results
         except Exception as e:
             print(f"Error generating insights: {str(e)}")
+            traceback.print_exc()
             # Return empty results instead of None to prevent cascading errors
             return {
                 "analysis": {},
-                "insights": self._create_empty_insights()
+                "insights": self._create_empty_insights()["insights"]
             }
     
     def generate_visualizations(self) -> List[plt.Figure]:
@@ -195,6 +297,7 @@ class SupervisorAgent:
             print("No data loaded. Call process_data first.")
             return []
         
+        # Ensure we have analysis results
         if self.analysis_results is None:
             # Try to generate insights first, or use empty dict if that fails
             result = self.generate_insights()
@@ -202,6 +305,9 @@ class SupervisorAgent:
                 self.analysis_results = {}
         
         try:
+            # Ensure visualization agent is initialized
+            self._ensure_visualization_agent()
+            
             # Generate visualizations
             # Make sure analysis results are serializable
             serializable_analysis = make_json_serializable(self.analysis_results or {})
@@ -210,6 +316,7 @@ class SupervisorAgent:
             return self.visualizations
         except Exception as e:
             print(f"Error generating visualizations: {str(e)}")
+            traceback.print_exc()
             return []
     
     def generate_automation_suggestions(self) -> List[Dict[str, Any]]:
@@ -220,6 +327,7 @@ class SupervisorAgent:
             print("No data loaded. Call process_data first.")
             return []
         
+        # Ensure we have analysis results
         if self.analysis_results is None:
             # Try to generate insights first, or use empty dict if that fails
             result = self.generate_insights()
@@ -227,6 +335,9 @@ class SupervisorAgent:
                 self.analysis_results = {}
         
         try:
+            # Ensure automation agent is initialized
+            self._ensure_automation_agent()
+            
             # Generate automation suggestions
             print("Generating automation suggestions...")
             # Ensure analysis results are JSON serializable
@@ -243,6 +354,7 @@ class SupervisorAgent:
             return self.automation_suggestions
         except Exception as e:
             print(f"Error generating automation suggestions: {str(e)}")
+            traceback.print_exc()
             return []
     
     def generate_qualitative_answers(self) -> List[Dict[str, Any]]:
@@ -253,6 +365,7 @@ class SupervisorAgent:
             print("No data loaded. Call process_data first.")
             return []
         
+        # Ensure we have analysis results
         if self.analysis_results is None:
             # Try to generate insights first, or use empty dict if that fails
             result = self.generate_insights()
@@ -260,6 +373,9 @@ class SupervisorAgent:
                 self.analysis_results = {}
         
         try:
+            # Ensure QA agent is initialized
+            self._ensure_qa_agent()
+            
             # Generate qualitative answers
             print("Generating qualitative answers...")
             
@@ -305,12 +421,16 @@ class SupervisorAgent:
         if self.data is None:
             return "Please upload ticket data before asking questions."
         
+        # Ensure we have analysis results
         if self.analysis_results is None:
             self.generate_insights()
         
         try:
+            # Ensure chat agent is initialized
+            self._ensure_chat_agent()
+            
             # Make analysis results JSON serializable
-            serializable_analysis = make_json_serializable(self.analysis_results)
+            serializable_analysis = make_json_serializable(self.analysis_results or {})
             
             # Process query through chat agent
             print("Processing chat query...")
@@ -323,6 +443,7 @@ class SupervisorAgent:
             return validated_response
         except Exception as e:
             print(f"Error processing chat query: {str(e)}")
+            traceback.print_exc()
             return f"I'm sorry, I encountered an issue while processing your query: {str(e)}"
     
     def _validate_automation_suggestions(self, suggestions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

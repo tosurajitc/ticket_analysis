@@ -2,50 +2,706 @@ import pandas as pd
 import numpy as np
 from typing import List, Dict, Any, Optional
 import json
+import re  # Add this import
 from utils.json_utils import make_json_serializable
 from utils.rate_limiter import RateLimiter
 
 class AutomationRecommendationAgent:
-    """
-    Agent responsible for identifying automation opportunities in ticket data.
-    """
-    
     def __init__(self, llm):
         self.llm = llm
         self.rate_limiter = RateLimiter(base_delay=3.0, max_retries=3, max_delay=120.0)
-    
-    def identify_automation_opportunities(self, df: pd.DataFrame, analysis_results: Dict[str, Any]) -> List[Dict[str, Any]]:
+
+
+    def identify_automation_opportunities(
+        self, 
+        df: pd.DataFrame, 
+        analysis_results: Dict[str, Any], 
+        selected_columns: List[str] = None
+    ) -> List[Dict[str, Any]]:
         """
-        Identify potential automation opportunities based on the ticket data and analysis results
+        Identify potential automation opportunities based on ticket data
         """
-        # Ensure all data is JSON serializable
-        analysis_results = make_json_serializable(analysis_results)
+        # Validate inputs
+        if df is None or len(df) == 0 or not selected_columns:
+            return []
         
-        # Extract key information for automation analysis
-        schema_info = self._extract_schema_info(df)
+        # Prepare detailed column analysis
+        column_details = {}
+        for col in selected_columns:
+            # Detailed column analysis
+            value_counts = df[col].value_counts()
+            unique_values = value_counts.to_dict()
+            
+            column_details[col] = {
+                'dtype': str(df[col].dtype),
+                'unique_count': len(unique_values),
+                'top_values': value_counts.nlargest(5).to_dict(),
+                'sample_values': df[col].sample(min(5, len(df))).tolist()
+            }
         
-        # Identify patterns in the data that suggest automation opportunities
-        category_patterns = self._identify_category_patterns(df, analysis_results)
-        text_patterns = self._identify_text_patterns(df, analysis_results)
-        time_patterns = self._identify_time_patterns(df, analysis_results)
-        workflow_patterns = self._identify_workflow_patterns(df, analysis_results)
-        
-        # Combine all patterns
-        all_patterns = {
-            "schema_info": schema_info,
-            "category_patterns": category_patterns,
-            "text_patterns": text_patterns,
-            "time_patterns": time_patterns,
-            "workflow_patterns": workflow_patterns
+        # Create a clean JSON template without f-string interpolation
+        json_template = '''[
+    {
+        "title": "Uniquely Descriptive Title Derived from Data Insights",
+        "automation_opportunity": "Specific Opportunity Name",
+        "scope": {
+            "overview": "Concise description",
+            "detailed_description": "Comprehensive explanation",
+            "justification": "Detailed rationale"
+        },
+        "automation_type": {
+            "primary": "Specific Automation Approach",
+            "techniques": ["Detailed Techniques"]
+        },
+        "implementation_plan": ["Specific Steps"],
+        "impact": {
+            "quantitative": {
+                "efficiency_gain": "Percentage",
+                "cost_reduction": "Percentage Range"
+            },
+            "qualitative": ["Benefit Descriptions"]
         }
+    }
+]'''
         
-        # Make sure all patterns are serializable
-        all_patterns = make_json_serializable(all_patterns)
+        # Prepare comprehensive messages for LLM
+        prompt_content = f"""
+Analyze automation opportunities for the following columns: {selected_columns}
+
+Detailed Column Analysis:
+{json.dumps(column_details, indent=2)}
+
+Sample Data Overview:
+{df[selected_columns].head().to_string()}
+
+Guidelines for Automation Suggestions:
+1. Generate 3-5 highly specific, data-driven automation suggestions
+2. Each suggestion must:
+- Be directly derived from the actual data characteristics
+- Provide a comprehensive and unique automation approach
+- Include a clear, descriptive title
+- Explain detailed scope with strong justification
+- Specify precise automation techniques
+- Outline a concrete implementation plan
+- Estimate quantifiable business impact
+
+Response Format (Strict JSON):
+```json
+{json_template}
+```
+
+IMPORTANT: Ensure each suggestion is 100% relevant to the specific columns and data provided.
+"""
         
-        # Generate automation recommendations using LLM
-        automation_recommendations = self._generate_recommendations(all_patterns)
+        messages = [
+            {
+                "role": "system", 
+                "content": "You are an advanced AI assistant specializing in identifying unique automation opportunities in ticket management systems."
+            },
+            {
+                "role": "user", 
+                "content": prompt_content
+            }
+        ]
         
-        return automation_recommendations
+        # Execute LLM call
+        try:
+            # Invoke LLM 
+            response = self.rate_limiter.execute_with_retry(
+                self._generate_suggestions, 
+                messages
+            )
+            
+            # Parse and validate suggestions
+            return self._validate_suggestions(response)
+        
+        except Exception as e:
+            print(f"Error in automation opportunity identification: {str(e)}")
+            return []
+
+    def format_suggestion_for_display(self, suggestion: Dict[str, Any]) -> str:
+        """
+        Format automation suggestion for display
+        """
+        try:
+            # Construct a comprehensive markdown representation
+            full_suggestion = f"## {suggestion.get('title', 'Automation Opportunity')}\n\n"
+            
+            # Scope Section
+            full_suggestion += "### Scope\n"
+            
+            # Handle different scope structures (string or dict)
+            if isinstance(suggestion['scope'], dict):
+                if 'overview' in suggestion['scope']:
+                    full_suggestion += f"**Overview:** {suggestion['scope']['overview']}\n\n"
+                
+                if 'detailed_description' in suggestion['scope']:
+                    full_suggestion += f"**Detailed Description:** {suggestion['scope']['detailed_description']}\n\n"
+                
+                if 'justification' in suggestion['scope']:
+                    full_suggestion += f"**Justification:** {suggestion['scope']['justification']}\n\n"
+            else:
+                full_suggestion += f"{suggestion['scope']}\n\n"
+            
+            # Automation Type
+            full_suggestion += "### Automation Type\n"
+            
+            if isinstance(suggestion['automation_type'], dict):
+                if 'primary' in suggestion['automation_type']:
+                    full_suggestion += f"**Primary Approach:** {suggestion['automation_type']['primary']}\n"
+                
+                if 'techniques' in suggestion['automation_type'] and isinstance(suggestion['automation_type']['techniques'], list):
+                    full_suggestion += "**Techniques:**\n"
+                    for technique in suggestion['automation_type']['techniques']:
+                        full_suggestion += f"- {technique}\n"
+            else:
+                full_suggestion += f"{suggestion['automation_type']}\n"
+            
+            # Implementation Plan
+            full_suggestion += "\n### Implementation Plan\n"
+            if isinstance(suggestion['implementation_plan'], list):
+                for step in suggestion['implementation_plan']:
+                    full_suggestion += f"- {step}\n"
+            else:
+                full_suggestion += f"{suggestion['implementation_plan']}\n"
+            
+            # Impact
+            full_suggestion += "\n### Expected Impact\n"
+            
+            if isinstance(suggestion['impact'], dict):
+                if 'quantitative' in suggestion['impact'] and isinstance(suggestion['impact']['quantitative'], dict):
+                    full_suggestion += "**Quantitative Metrics:**\n"
+                    for metric, value in suggestion['impact']['quantitative'].items():
+                        full_suggestion += f"- {metric.replace('_', ' ').title()}: {value}\n"
+                
+                if 'qualitative' in suggestion['impact'] and isinstance(suggestion['impact']['qualitative'], list):
+                    full_suggestion += "\n**Qualitative Benefits:**\n"
+                    for benefit in suggestion['impact']['qualitative']:
+                        full_suggestion += f"- {benefit}\n"
+            else:
+                full_suggestion += f"{suggestion['impact']}\n"
+            
+            return full_suggestion
+        
+        except Exception as e:
+            print(f"Error formatting suggestion: {e}")
+            return "Unable to format suggestion"
+
+    def _extract_common_keywords(self, series: pd.Series) -> List[str]:
+        """
+        Extract common keywords from text series
+        
+        Args:
+            series (pd.Series): Text series to analyze
+        
+        Returns:
+            List[str]: Most common keywords
+        """
+        # Combine all text
+        combined_text = ' '.join(series.dropna().astype(str))
+        
+        # Tokenize and count words
+        from collections import Counter
+        import re
+        
+        # Remove common stop words and punctuation
+        words = re.findall(r'\b\w+\b', combined_text.lower())
+        stop_words = set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'])
+        
+        # Filter out stop words and very short words
+        filtered_words = [word for word in words if word not in stop_words and len(word) > 2]
+        
+        # Get top keywords
+        return [word for word, count in Counter(filtered_words).most_common(10)]
+
+    def _generate_categorical_suggestions(
+        self, 
+        df: pd.DataFrame, 
+        column_insights: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate detailed automation suggestions for categorical columns
+        """
+        suggestions = []
+        
+        for col, insights in column_insights.items():
+            if insights['type'] == 'categorical':
+                # Detailed suggestion with comprehensive scope and justification
+                top_category = list(insights['top_values'].keys())[0]
+                top_category_percentage = (insights['top_values'][top_category] / len(df)) * 100
+                
+                suggestion = {
+                    "automation_opportunity": f"Intelligent Ticket Routing for {col} Category",
+                    "scope": {
+                        "overview": f"Develop a sophisticated automated routing system for tickets based on the '{col}' categorization",
+                        "detailed_description": f"""
+                        Comprehensive ticket routing automation that leverages the '{col}' categorization to:
+                        - Automatically classify and route tickets with {top_category_percentage:.2f}% of tickets falling under the '{top_category}' category
+                        - Reduce manual intervention in ticket assignment
+                        - Optimize support team resource allocation
+                        """,
+                        "justification": f"""
+                        Current Challenges:
+                        - Manual ticket routing is time-consuming and error-prone
+                        - Inconsistent ticket assignment leads to inefficient resource utilization
+                        - The '{top_category}' category represents a significant portion of tickets, indicating a prime opportunity for automation
+
+                        Potential Benefits:
+                        - Standardize ticket routing process
+                        - Reduce human error in ticket assignment
+                        - Improve response times for critical ticket categories
+                        - Enable more efficient team productivity
+                        """
+                    },
+                    "automation_type": {
+                        "primary": "AI-Powered Rule-Based Automation",
+                        "techniques": [
+                            "Machine Learning Classification",
+                            "Rule-Based Decision Making",
+                            "Predictive Routing"
+                        ]
+                    },
+                    "implementation_plan": [
+                        "Develop a machine learning model to classify tickets based on historical data",
+                        f"Create a comprehensive mapping of {col} categories to appropriate support teams",
+                        "Implement a rule-based routing engine with AI-driven decision support",
+                        "Develop a feedback loop for continuous model improvement",
+                        "Create a monitoring dashboard to track routing effectiveness"
+                    ],
+                    "impact": {
+                        "quantitative": {
+                            "efficiency_gain": f"{min(80, insights['unique_count'] * 10)}%",
+                            "cost_reduction": "15-25%",
+                            "response_time_improvement": "30-40%"
+                        },
+                        "qualitative": [
+                            "Enhanced support team productivity",
+                            "Improved ticket resolution consistency",
+                            "More accurate resource allocation"
+                        ]
+                    }
+                }
+                suggestions.append(suggestion)
+        
+        return suggestions
+
+    def _generate_text_suggestions(
+        self, 
+        df: pd.DataFrame, 
+        column_insights: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate detailed automation suggestions for text columns
+        """
+        suggestions = []
+        
+        for col, insights in column_insights.items():
+            if insights.get('text_analysis'):
+                keywords = insights['text_analysis'].get('common_keywords', [])
+                avg_length = insights['text_analysis'].get('avg_length', 0)
+                
+                if keywords:
+                    suggestion = {
+                        "automation_opportunity": f"Advanced Text Analytics for {col}",
+                        "scope": {
+                            "overview": f"Implement an intelligent text processing system for {col}",
+                            "detailed_description": f"""
+                            Develop a comprehensive text analytics solution that:
+                            - Automatically extracts and categorizes key information from {col}
+                            - Identifies patterns and trends in textual data
+                            - Provides actionable insights from ticket descriptions
+
+                            Key Characteristics:
+                            - Average text length: {avg_length:.2f} characters
+                            - Dominant keywords: {', '.join(keywords[:5])}
+                            """,
+                            "justification": """
+                            Current Challenges:
+                            - Manual text analysis is time-consuming and subjective
+                            - Difficulty in extracting meaningful insights from text data
+                            - Inconsistent interpretation of ticket descriptions
+
+                            Potential Benefits:
+                            - Standardize text interpretation
+                            - Enable quick identification of critical issues
+                            - Improve knowledge management
+                            - Enhance decision-making capabilities
+                            """
+                        },
+                        "automation_type": {
+                            "primary": "AI-Driven Natural Language Processing",
+                            "techniques": [
+                                "Advanced NLP",
+                                "Machine Learning Text Classification",
+                                "Semantic Analysis"
+                            ]
+                        },
+                        "implementation_plan": [
+                            "Develop a sophisticated NLP model for text classification",
+                            "Create a comprehensive taxonomy based on identified keywords",
+                            "Implement machine learning algorithms for semantic understanding",
+                            "Build an automated tagging and categorization system",
+                            "Develop a knowledge extraction and indexing mechanism"
+                        ],
+                        "impact": {
+                            "quantitative": {
+                                "efficiency_gain": f"{min(70, len(keywords) * 5)}%",
+                                "processing_time_reduction": "40-50%",
+                                "insight_generation_speed": "60-70% faster"
+                            },
+                            "qualitative": [
+                                "Enhanced information retrieval",
+                                "Improved decision support",
+                                "Consistent text interpretation"
+                            ]
+                        }
+                    }
+                    suggestions.append(suggestion)
+        
+        return suggestions
+
+    def _generate_workflow_suggestions(
+        self, 
+        df: pd.DataFrame, 
+        column_insights: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate workflow-related automation suggestions
+        
+        Args:
+            df (pd.DataFrame): Input dataframe
+            column_insights (Dict[str, Any]): Column analysis insights
+        
+        Returns:
+            List[Dict[str, Any]]: Workflow automation suggestions
+        """
+        suggestions = []
+        
+        # Look for potential workflow optimization opportunities
+        if len(column_insights) > 1:
+            suggestion = {
+                "title": "Cross-Column Workflow Optimization",
+                "automation_opportunity": "Cross-Column Workflow Optimization",
+                "scope": {
+                    "overview": "Develop an integrated workflow system that leverages insights from multiple columns",
+                    "detailed_description": "Create a comprehensive workflow system that analyzes relationships between different data points",
+                    "justification": "Current manual processes fail to capture cross-column insights"
+                },
+                "implementation_plan": [
+                    "Create a correlation analysis between different columns",
+                    "Develop a decision tree for automated workflow routing",
+                    "Implement a dynamic workflow management system",
+                    "Create predictive models for process optimization"
+                ],
+                "automation_type": {
+                    "primary": "Predictive Analytics and Workflow Automation",
+                    "techniques": ["Machine Learning", "Process Mining", "Decision Trees"]
+                },
+                "impact": {
+                    "quantitative": {
+                        "efficiency_gain": "40-50%",
+                        "cost_reduction": "20-30%"
+                    },
+                    "qualitative": [
+                        "Improved process consistency",
+                        "Enhanced decision making",
+                        "Better resource allocation"
+                    ]
+                }
+            }
+            suggestions.append(suggestion)
+        
+        return suggestions
+    
+    def _generate_suggestions(self, messages: List[Dict[str, Any]]) -> str:
+        """
+        Generate suggestions using the LLM
+        
+        Args:
+            messages (List[Dict[str, Any]]): Prepared messages for LLM
+        
+        Returns:
+            str: Raw response content
+        """
+        try:
+            # Invoke LLM (adjust based on your specific LLM implementation)
+            response = self.llm.invoke(messages)
+            return response.content
+        except Exception as e:
+            print(f"LLM Invocation Error: {e}")
+            raise
+        
+    def _validate_suggestions(self, response_content: str) -> List[Dict[str, Any]]:
+        """
+        Validate and parse LLM suggestions with enhanced error handling
+        
+        Args:
+            response_content (str): Raw response from LLM
+        
+        Returns:
+            List[Dict[str, Any]]: Validated automation suggestions
+        """
+        try:
+            # Log the raw response for debugging
+            print(f"Raw response length: {len(response_content)}")
+            print(f"Response preview: {response_content[:200]}...")
+            
+            # Multiple parsing strategies
+            suggestions = []
+            
+            # Clean the response content
+            cleaned_content = response_content.strip()
+            
+            # Strategy 1: Direct JSON parsing
+            try:
+                suggestions = json.loads(cleaned_content)
+                print("Successfully parsed JSON directly")
+            except json.JSONDecodeError as e:
+                print(f"Direct JSON parsing failed: {e}")
+                
+                # Strategy 2: Extract JSON from markdown code block
+                import re
+                
+                # Try to extract JSON between ```json and ```
+                json_match = re.search(r'```json\s*([\s\S]*?)\s*```', cleaned_content, re.DOTALL)
+                if json_match:
+                    try:
+                        json_content = json_match.group(1).strip()
+                        print(f"Extracted JSON from code block: {json_content[:100]}...")
+                        suggestions = json.loads(json_content)
+                        print("Successfully parsed JSON from code block")
+                    except json.JSONDecodeError as e2:
+                        print(f"JSON code block parsing failed: {e2}")
+                        
+                        # Try with more aggressive cleaning
+                        try:
+                            # Replace any potential problematic characters
+                            cleaned_json = json_content.replace('\n', ' ').replace('\r', '')
+                            # Fix common issues with trailing commas
+                            cleaned_json = re.sub(r',\s*}', '}', cleaned_json)
+                            cleaned_json = re.sub(r',\s*]', ']', cleaned_json)
+                            
+                            suggestions = json.loads(cleaned_json)
+                            print("Successfully parsed JSON after cleaning")
+                        except json.JSONDecodeError as e3:
+                            print(f"Cleaned JSON parsing failed: {e3}")
+                            
+                            # Strategy 3: Try to find array pattern
+                            try:
+                                array_match = re.search(r'\[\s*{[\s\S]*}\s*\]', cleaned_content, re.DOTALL)
+                                if array_match:
+                                    array_json = array_match.group(0)
+                                    print(f"Extracted array JSON: {array_json[:100]}...")
+                                    suggestions = json.loads(array_json)
+                                    print("Successfully parsed array JSON")
+                            except Exception as e4:
+                                print(f"Array extraction failed: {e4}")
+                else:
+                    print("No JSON code block found")
+                    
+                    # Try to find any JSON array in the text
+                    try:
+                        array_match = re.search(r'\[\s*{[\s\S]*}\s*\]', cleaned_content, re.DOTALL)
+                        if array_match:
+                            array_json = array_match.group(0)
+                            print(f"Extracted array JSON: {array_json[:100]}...")
+                            suggestions = json.loads(array_json)
+                            print("Successfully parsed array JSON")
+                    except Exception as e4:
+                        print(f"Array extraction failed: {e4}")
+            
+            # If still no suggestions, try to create a default one
+            if not suggestions:
+                print("All JSON parsing strategies failed. Creating default suggestion.")
+                # Create a single default suggestion
+                suggestions = [{
+                    "title": "Automated Processing System",
+                    "automation_opportunity": "Process Automation",
+                    "scope": {
+                        "overview": "Develop an automated system to process ticket data",
+                        "detailed_description": "Create a system that can automatically categorize and route tickets based on their content",
+                        "justification": "Manual processing is time-consuming and error-prone"
+                    },
+                    "automation_type": {
+                        "primary": "Rule-based Automation with ML",
+                        "techniques": ["Natural Language Processing", "Classification Algorithms"]
+                    },
+                    "implementation_plan": [
+                        "Analyze ticket data patterns",
+                        "Develop classification models",
+                        "Implement routing rules",
+                        "Create feedback mechanism"
+                    ],
+                    "impact": {
+                        "quantitative": {
+                            "efficiency_gain": "30-40%",
+                            "cost_reduction": "20-25%"
+                        },
+                        "qualitative": [
+                            "Improved response times",
+                            "More consistent handling",
+                            "Better resource allocation"
+                        ]
+                    }
+                }]
+            
+            # Validate suggestions structure
+            validated_suggestions = []
+            for suggestion in suggestions:
+                # Ensure all required keys are present and of correct type
+                try:
+                    # Validate and normalize scope
+                    if isinstance(suggestion.get('scope'), str):
+                        suggestion['scope'] = {
+                            'overview': suggestion['scope'],
+                            'detailed_description': '',
+                            'justification': ''
+                        }
+                    elif not isinstance(suggestion.get('scope'), dict):
+                        suggestion['scope'] = {
+                            'overview': "Automated process improvement",
+                            'detailed_description': '',
+                            'justification': ''
+                        }
+                    
+                    # Validate title
+                    if 'title' not in suggestion:
+                        suggestion['title'] = suggestion.get('automation_opportunity', 'Automation Opportunity')
+                    
+                    # Validate implementation plan
+                    if not isinstance(suggestion.get('implementation_plan'), list):
+                        if suggestion.get('implementation_plan'):
+                            suggestion['implementation_plan'] = [str(suggestion['implementation_plan'])]
+                        else:
+                            suggestion['implementation_plan'] = ["Analyze data", "Design solution", "Implement automation", "Monitor and improve"]
+                    
+                    # Validate impact
+                    if 'impact' not in suggestion:
+                        suggestion['impact'] = {
+                            'quantitative': {'efficiency_gain': '25-30%'},
+                            'qualitative': ['Improved efficiency', 'Better user experience']
+                        }
+                    elif isinstance(suggestion['impact'], str):
+                        impact_text = suggestion['impact']
+                        suggestion['impact'] = {
+                            'quantitative': {'estimated_improvement': impact_text},
+                            'qualitative': ['Improved efficiency']
+                        }
+                    elif not isinstance(suggestion['impact'], dict):
+                        suggestion['impact'] = {
+                            'quantitative': {'efficiency_gain': '25-30%'},
+                            'qualitative': ['Improved efficiency', 'Better user experience']
+                        }
+                    
+                    # If impact is a dict but doesn't have the right structure
+                    if isinstance(suggestion['impact'], dict):
+                        if 'quantitative' not in suggestion['impact']:
+                            suggestion['impact']['quantitative'] = {'efficiency_gain': '25-30%'}
+                        if 'qualitative' not in suggestion['impact']:
+                            suggestion['impact']['qualitative'] = ['Improved efficiency']
+                    
+                    # Validate automation type
+                    if 'automation_type' not in suggestion:
+                        suggestion['automation_type'] = {
+                            'primary': 'AI-Powered Automation',
+                            'techniques': ['Machine Learning', 'Natural Language Processing']
+                        }
+                    elif isinstance(suggestion['automation_type'], str):
+                        automation_type_text = suggestion['automation_type']
+                        suggestion['automation_type'] = {
+                            'primary': automation_type_text,
+                            'techniques': ['Automation Technology']
+                        }
+                    elif not isinstance(suggestion['automation_type'], dict):
+                        suggestion['automation_type'] = {
+                            'primary': 'AI-Powered Automation',
+                            'techniques': ['Machine Learning', 'Natural Language Processing']
+                        }
+                    
+                    # If automation_type is a dict but doesn't have the right structure
+                    if isinstance(suggestion['automation_type'], dict):
+                        if 'primary' not in suggestion['automation_type']:
+                            suggestion['automation_type']['primary'] = 'AI-Powered Automation'
+                        if 'techniques' not in suggestion['automation_type'] or not isinstance(suggestion['automation_type']['techniques'], list):
+                            suggestion['automation_type']['techniques'] = ['Machine Learning', 'Process Automation']
+                    
+                    # Add the suggestion to validated list
+                    validated_suggestions.append(suggestion)
+                    print(f"Successfully validated suggestion: {suggestion.get('title')}")
+                    
+                except Exception as e:
+                    print(f"Error validating suggestion: {str(e)}")
+                    # Don't add invalid suggestions
+            
+            # Ensure we have at least one suggestion
+            if not validated_suggestions:
+                print("No valid suggestions created. Adding a default one.")
+                validated_suggestions = [{
+                    "title": "Automated Processing System",
+                    "automation_opportunity": "Process Automation",
+                    "scope": {
+                        "overview": "Develop an automated system to process ticket data",
+                        "detailed_description": "Create a system that can automatically categorize and route tickets based on their content",
+                        "justification": "Manual processing is time-consuming and error-prone"
+                    },
+                    "automation_type": {
+                        "primary": "Rule-based Automation with ML",
+                        "techniques": ["Natural Language Processing", "Classification Algorithms"]
+                    },
+                    "implementation_plan": [
+                        "Analyze ticket data patterns",
+                        "Develop classification models",
+                        "Implement routing rules",
+                        "Create feedback mechanism"
+                    ],
+                    "impact": {
+                        "quantitative": {
+                            "efficiency_gain": "30-40%",
+                            "cost_reduction": "20-25%"
+                        },
+                        "qualitative": [
+                            "Improved response times",
+                            "More consistent handling",
+                            "Better resource allocation"
+                        ]
+                    }
+                }]
+            
+            return validated_suggestions
+        
+        except Exception as e:
+            print(f"Fatal error in _validate_suggestions: {str(e)}")
+            # Return a default suggestion in case of complete failure
+            return [{
+                "title": "Automated Processing System",
+                "automation_opportunity": "Process Automation",
+                "scope": {
+                    "overview": "Develop an automated system to process ticket data",
+                    "detailed_description": "Create a system that can automatically categorize and route tickets based on their content",
+                    "justification": "Manual processing is time-consuming and error-prone"
+                },
+                "automation_type": {
+                    "primary": "Rule-based Automation with ML",
+                    "techniques": ["Natural Language Processing", "Classification Algorithms"]
+                },
+                "implementation_plan": [
+                    "Analyze ticket data patterns",
+                    "Develop classification models",
+                    "Implement routing rules",
+                    "Create feedback mechanism"
+                ],
+                "impact": {
+                    "quantitative": {
+                        "efficiency_gain": "30-40%",
+                        "cost_reduction": "20-25%"
+                    },
+                    "qualitative": [
+                        "Improved response times",
+                        "More consistent handling",
+                        "Better resource allocation"
+                    ]
+                }
+            }]
     
     def _extract_schema_info(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Extract basic schema information from the dataframe"""
@@ -264,100 +920,3 @@ class AutomationRecommendationAgent:
                     simplified["workflow_patterns"][key] = dict(sorted_assignees)
         
         return simplified
-    
-    def _generate_recommendations(self, all_patterns: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Generate automation recommendations using LLM"""
-        # Simplify the patterns to reduce token usage
-        simplified_patterns = self._simplify_patterns_for_llm(all_patterns)
-        
-        # Prepare input for LLM
-        messages = [
-            {"role": "system", "content": """You are an automation expert specializing in ticket systems and workflow optimization. 
-Your task is to identify the top 5 automation opportunities based on the data patterns provided.
-Focus on high-impact, feasible automation that would reduce manual effort and improve efficiency."""},
-            {"role": "user", "content": f"""
-Based on the following ticket data patterns, identify the top 5 automation opportunities.
-For each opportunity, provide:
-1. A title for the automation opportunity
-2. The automation scope (what will be automated)
-3. Justification (why this should be automated)
-4. Type of automation (AI, RPA, rule-based, etc.)
-5. Implementation plan (high-level steps)
-6. Expected impact
-
-Here are the patterns found in the ticket data:
-{json.dumps(simplified_patterns, indent=2)}
-
-Format your response as a JSON array with 5 objects, each containing the fields: 
-title, scope, justification, type, implementation, impact.
-"""}
-        ]
-        
-        try:
-            # Use rate limiter to handle API limits
-            def make_llm_call():
-                return self.llm.invoke(messages)
-            
-            response = self.rate_limiter.execute_with_retry(make_llm_call)
-            
-            # Extract JSON array from response
-            response_text = response.content
-            
-            # Handle case where response is wrapped in markdown
-            if "```json" in response_text and "```" in response_text.split("```json")[1]:
-                json_str = response_text.split("```json")[1].split("```")[0]
-            elif "```" in response_text and "```" in response_text.split("```")[1]:
-                json_str = response_text.split("```")[1].split("```")[0]
-            else:
-                json_str = response_text
-            
-            recommendations = json.loads(json_str)
-            
-            # Ensure we have at most 5 recommendations
-            results = make_json_serializable(recommendations[:5])
-            return results
-        except Exception as e:
-            print(f"Error generating automation recommendations: {str(e)}")
-            # Return default recommendations as fallback
-            return [
-                {
-                    "title": "Automated Ticket Categorization",
-                    "scope": "Automatically categorize incoming tickets based on content",
-                    "justification": "Reduces manual categorization effort and improves consistency",
-                    "type": "AI/ML",
-                    "implementation": "Implement ML-based text classification model trained on historical ticket data",
-                    "impact": "30-40% reduction in ticket triage time, improved routing accuracy"
-                },
-                {
-                    "title": "Resolution Time Prediction",
-                    "scope": "Predict expected resolution time for tickets",
-                    "justification": "Helps set expectations and prioritize critical tickets",
-                    "type": "AI/ML",
-                    "implementation": "Develop predictive model based on historical resolution patterns",
-                    "impact": "Improved SLA adherence and resource allocation"
-                },
-                {
-                    "title": "Automated Status Updates",
-                    "scope": "Automatically update ticket status based on actions taken",
-                    "justification": "Reduces manual status updates and improves tracking",
-                    "type": "RPA",
-                    "implementation": "Implement workflow rules to detect actions and update status accordingly",
-                    "impact": "Improved data accuracy and reduced administrative overhead"
-                },
-                {
-                    "title": "Knowledge Base Enhancement",
-                    "scope": "Automatically suggest knowledge base articles for common issues",
-                    "justification": "Speeds up resolution by leveraging existing solutions",
-                    "type": "AI/NLP",
-                    "implementation": "Implement semantic search to match tickets with KB articles",
-                    "impact": "Faster resolution times and knowledge reuse"
-                },
-                {
-                    "title": "SLA Monitoring Alerts",
-                    "scope": "Proactive notification for tickets approaching SLA breach",
-                    "justification": "Prevents SLA violations and improves customer satisfaction",
-                    "type": "Rule-based",
-                    "implementation": "Set up alert system based on ticket age and priority",
-                    "impact": "Reduced SLA violations and improved prioritization"
-                }
-            ]

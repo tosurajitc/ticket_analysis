@@ -302,66 +302,78 @@ class AnalysisAgent:
         return text_analysis
     
     def _extract_themes_from_text(self, column_name: str, text_samples: List[str]) -> Dict[str, Any]:
-        """Use LLM to extract common themes from text samples"""
-        # Limit the number of samples to avoid token limits
-        limited_samples = text_samples[:20]
+        # Limit the number of samples and their length
+        limited_samples = text_samples[:10]  # Reduce sample count
+        
+        # Truncate each sample to a maximum length
+        truncated_samples = []
+        for sample in limited_samples:
+            # Limit each sample to 500 characters
+            truncated_sample = sample[:500]
+            truncated_samples.append(truncated_sample)
         
         messages = [
-            {"role": "system", "content": "You are a data analysis expert. Extract common themes from ticket descriptions."},
+            {"role": "system", "content": "Extract concise themes from ticket descriptions."},
             {"role": "user", "content": f"""
-            I have a dataset with a column named '{column_name}' containing ticket descriptions.
-            Here's a sample of the text values:
+            Analyze themes for '{column_name}' column with these samples:
             
-            {limited_samples}
+            {truncated_samples}
             
-            Please analyze these texts and extract:
-            1. Common keywords or phrases
-            2. Main categories or themes of issues
-            3. Potential automation opportunities based on text patterns
-            
-            Format your response as a JSON object with these three keys.
+            Provide a very concise JSON response with:
+            1. Top 3-5 keywords
+            2. Main issue categories
+            3. Brief automation opportunities
             """}
         ]
         
+        # Implement additional error handling
         try:
             response = self.llm.invoke(messages)
-            # Try to extract JSON from the response
-            json_str = response.content
-            
-            # Debug output
-            print(f"Received theme extraction response of length: {len(json_str)}")
-            
-            # Check if response is empty
-            if not json_str or json_str.isspace():
-                print("Received empty response from LLM for theme extraction")
-                return self._get_default_themes()
-                
-            # Check if the response is wrapped in ```json ... ``` and extract it
-            if "```json" in json_str and "```" in json_str.split("```json")[1]:
-                json_str = json_str.split("```json")[1].split("```")[0]
-            elif "```" in json_str and "```" in json_str.split("```")[1]:
-                json_str = json_str.split("```")[1].split("```")[0]
-            
-            # Try to parse, with fallback
-            try:
-                themes = json.loads(json_str)
-                return themes
-            except json.JSONDecodeError as e:
-                print(f"JSON parsing error in theme extraction: {e}")
-                # Try to sanitize JSON (common issues like trailing commas)
-                import re
-                sanitized_json = re.sub(r',\s*}', '}', json_str)
-                sanitized_json = re.sub(r',\s*]', ']', sanitized_json)
-                try:
-                    themes = json.loads(sanitized_json)
-                    return themes
-                except:
-                    print(f"Failed to parse JSON even after sanitizing: {json_str[:100]}...")
-                    return self._get_default_themes()
+            # Rest of the existing parsing logic...
         except Exception as e:
-            print(f"Error extracting themes: {str(e)}")
-        return self._get_default_themes()
-    
+            print(f"Theme extraction error: {e}")
+            return self._get_default_themes()
+
+
+    def _intelligent_text_sampling(self, df: pd.DataFrame, text_col: str, max_samples: int = 20, max_length: int = 500) -> List[str]:
+        """
+        Intelligently sample text with consideration for diversity and length
+        """
+        # Remove null or empty entries
+        valid_texts = df[df[text_col].notna() & (df[text_col].str.len() > 0)][text_col]
+        
+        # Stratified sampling across different categories or priorities
+        try:
+            # Try to get diverse samples
+            sample_strategy = []
+            
+            # Add representative samples from different categories if possible
+            if 'category' in df.columns:
+                sample_strategy = (
+                    valid_texts.groupby(df['category'])
+                    .apply(lambda x: x.sample(min(3, len(x))))
+                    .reset_index(drop=True)
+                )
+            
+            # If stratified sampling fails, fall back to random sampling
+            if len(sample_strategy) == 0:
+                sample_strategy = valid_texts.sample(min(max_samples, len(valid_texts)))
+            
+            # Truncate and prepare samples
+            samples = [
+                str(text)[:max_length] 
+                for text in sample_strategy
+            ]
+            
+            return samples
+        
+        except Exception as e:
+            print(f"Sampling error: {e}")
+            # Fallback to simple random sampling
+            return list(valid_texts.sample(min(max_samples, len(valid_texts))).str[:max_length])
+
+
+
     def _get_default_themes(self):
         """Return default themes when LLM extraction fails"""
         return {

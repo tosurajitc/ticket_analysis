@@ -9,15 +9,89 @@ class ChatAgent:
     """
     Agent responsible for handling user chat queries about the ticket data.
     """
+    class ChatAgent:
+        def _reduce_analysis_results(self, analysis_results: Dict[str, Any]) -> Dict[str, Any]:
+            """
+            Reduce the size of analysis results to avoid token limits
+            
+            Args:
+                analysis_results (Dict[str, Any]): Original analysis results
+            
+            Returns:
+                Dict[str, Any]: Reduced analysis results
+            """
+            if not analysis_results:
+                return {}
+            
+            reduced_results = {}
+            try:
+                # Limit depth and size of nested structures
+                for key, value in analysis_results.items():
+                    if isinstance(value, dict):
+                        # Truncate dictionary values
+                        reduced_results[key] = {
+                            k: (v[:50] if isinstance(v, list) else str(v)[:200]) 
+                            for k, v in value.items()
+                        }
+                    elif isinstance(value, list):
+                        # Limit list to first 20 items
+                        reduced_results[key] = value[:20]
+                    else:
+                        # Convert other types to strings and limit length
+                        reduced_results[key] = str(value)[:500]
+            except Exception as e:
+                print(f"Error reducing analysis results: {e}")
+                return analysis_results  # Fallback to original if reduction fails
+            
+            return reduced_results
     
     def __init__(self, llm):
         self.llm = llm
         self.rate_limiter = RateLimiter(base_delay=2.0, max_retries=3, max_delay=60.0)
+
+
+    def chat_response(self, query: str) -> str:
+        """
+        Process a chat query and generate a response
+        """
+        if self.data is None:
+            return "Please upload ticket data before asking questions."
+        
+        try:
+            # Make sure we have analysis results
+            if self.analysis_results is None:
+                print("Generating insights for chat...")
+                self.generate_insights()
+            
+            # Make analysis results JSON serializable
+            serializable_analysis = make_json_serializable(self.analysis_results or {})
+            
+            # Print debug info
+            print(f"Sending query to chat agent: {query}")
+            print(f"Data shape: {self.data.shape}")
+            
+            # Process query through chat agent
+            print("Processing chat query...")
+            response = self.chat_agent.process_query(query, self.data, serializable_analysis)
+            print("Chat response generated")
+            
+            return response
+        except Exception as e:
+            print(f"Error processing chat query: {str(e)}")
+            return f"I'm sorry, I encountered an issue while processing your query: {str(e)}"    
     
     def process_query(self, query: str, df: pd.DataFrame, analysis_results: Dict[str, Any]) -> str:
         """
         Process a user query about the ticket data
         """
+        if len(df) > 1000:
+            df = df.sample(1000)
+
+        for col in df.columns:
+            if pd.api.types.is_datetime64_any_dtype(df[col]):
+                df[col] = df[col].astype(str)
+
+
         # Ensure analysis results are JSON serializable
         analysis_results = make_json_serializable(analysis_results)
         

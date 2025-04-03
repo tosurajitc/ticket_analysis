@@ -4,40 +4,13 @@ from typing import Callable, Any, Optional, Dict
 import json
 
 class RateLimiter:
-    """
-    Utility to handle rate limiting for API calls.
-    Implements exponential backoff with jitter for retries.
-    """
-    
     def __init__(self, base_delay: float = 2.0, max_retries: int = 3, max_delay: float = 120.0):
-        """
-        Initialize the rate limiter.
-        
-        Args:
-            base_delay: Base delay in seconds for exponential backoff
-            max_retries: Maximum number of retry attempts
-            max_delay: Maximum delay between retries in seconds
-        """
         self.base_delay = base_delay
         self.max_retries = max_retries
         self.max_delay = max_delay
         self.last_request_time = 0
     
     def execute_with_retry(self, func: Callable, *args, **kwargs) -> Any:
-        """
-        Execute a function with retry logic.
-        
-        Args:
-            func: The function to execute
-            *args: Positional arguments to pass to the function
-            **kwargs: Keyword arguments to pass to the function
-            
-        Returns:
-            The result of the function
-            
-        Raises:
-            Exception: If all retry attempts fail
-        """
         last_exception = None
         
         # Enforce minimum time between requests (3 seconds)
@@ -81,12 +54,6 @@ class RateLimiter:
     def _is_rate_limit_error(self, exception: Exception) -> bool:
         """
         Check if an exception is due to rate limiting.
-        
-        Args:
-            exception: The exception to check
-            
-        Returns:
-            True if the exception is due to rate limiting, False otherwise
         """
         err_str = str(exception).lower()
         return (
@@ -98,12 +65,6 @@ class RateLimiter:
     def _extract_wait_time(self, exception: Exception) -> Optional[float]:
         """
         Extract the wait time from a rate limit error message.
-        
-        Args:
-            exception: The exception containing rate limit information
-            
-        Returns:
-            The wait time in seconds, or None if it couldn't be extracted
         """
         err_str = str(exception)
         
