@@ -75,7 +75,7 @@ Sample Data Overview:
 {df[selected_columns].head().to_string()}
 
 Guidelines for Automation Suggestions:
-1. Generate 3-5 highly specific, data-driven automation suggestions
+1. Generate 5 highly specific, data-driven automation suggestions
 2. Each suggestion must:
 - Be directly derived from the actual data characteristics
 - Provide a comprehensive and unique automation approach

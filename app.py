@@ -21,10 +21,13 @@ GROQ_MODEL_NAME = os.getenv("GROQ_MODEL_NAME", "llama3-70b-8192")  # Default if 
 # Page setup once
 st.set_page_config(
     page_title="Ticket Analysis System",
-    page_icon="🎫",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+st.title("Qualitative Ticket Analysis")
+st.markdown("---")
 
 # Session state initialization - only for new sessions
 if 'initialization_complete' not in st.session_state:
@@ -240,7 +243,7 @@ def generate_automation_suggestions_bg():
         traceback.print_exc()
 
 # Create sidebar
-st.sidebar.title("Ticket Analysis System")
+st.sidebar.title("File Upload")
 st.sidebar.write("Upload your ticket data and get AI-powered insights")
 
 # File uploader
@@ -319,7 +322,7 @@ if st.session_state.ticket_data is not None:
             for message in st.session_state.chat_interface_history:
                 st.sidebar.chat_message(message["role"]).write(message["content"])
         else:
-            st.sidebar.info("🤖 Your AI assistant is ready!")
+            st.sidebar.info("Your AI assistant is ready!")
     
     # Chat Input in Sidebar
     user_query = st.sidebar.text_input(
@@ -376,7 +379,7 @@ if st.session_state.ticket_data is not None:
             st.experimental_rerun()
 
 else:
-    st.sidebar.warning("📊 Upload ticket data to start chatting")            
+    st.sidebar.warning("Upload ticket data to start chatting")            
 
 # Main content area with tabs
 tab1, tab2, tab3 = st.tabs([
@@ -421,19 +424,19 @@ with tab1:
                 
                 # Display volume insights
                 if "volume_insights" in insights and insights["volume_insights"]:
-                    with st.expander("📊 Volume Analysis", expanded=True):
+                    with st.expander("Volume Analysis", expanded=True):
                         for insight in insights["volume_insights"][:3]:
                             st.markdown(f"• {insight}")
                 
                 # Display time insights
                 if "time_insights" in insights and insights["time_insights"]:
-                    with st.expander("⏱️ Time Patterns", expanded=True):
+                    with st.expander("⏱Time Patterns", expanded=True):
                         for insight in insights["time_insights"][:3]:
                             st.markdown(f"• {insight}")
                 
                 # Display category insights
                 if "category_insights" in insights and insights["category_insights"]:
-                    with st.expander("🏷️ Category Distribution", expanded=True):
+                    with st.expander("Category Distribution", expanded=True):
                         for insight in insights["category_insights"][:3]:
                             st.markdown(f"• {insight}")
                 
@@ -484,7 +487,7 @@ with tab1:
             date_cols = st.session_state.date_cols
         
         # Create tabs for different chart types
-        chart_tabs = st.tabs(["📊 Distribution Charts", "📈 Time Series", "🔄 Correlation", "📊 Custom"])
+        chart_tabs = st.tabs(["Distribution Charts", "Time Series", "Correlation", "Custom"])
         
         # Tab 1: Distribution Charts (Pie, Bar)
         with chart_tabs[0]:
@@ -1370,7 +1373,7 @@ with tab2:
 
 # Tab 3: Automation Suggestions
 with tab3:
-    st.header("🤖 Automation Suggestions")
+    st.header("Automation Suggestions")
     
     # Ensure ticket data is loaded
     if st.session_state.ticket_data is not None:
@@ -1438,7 +1441,7 @@ with tab3:
                         
                         # Display automation suggestions
                         if automation_suggestions and len(automation_suggestions) > 0:
-                            st.subheader("🚀 Automation Opportunities")
+                            st.subheader("Automation Opportunities")
                             
                             for i, suggestion in enumerate(automation_suggestions, 1):
                                 with st.expander(f"Suggestion {i}"):
