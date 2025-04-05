@@ -9,6 +9,7 @@ import time
 import threading
 import traceback
 from dotenv import load_dotenv
+from utils.chart_utils import ChartConfig
 
 # Import custom JSON utilities
 from utils.json_utils import make_json_serializable, safe_json_dumps, safe_json_loads
@@ -538,62 +539,40 @@ with tab1:
                         
                         # Count values
                         value_counts = plot_df[dist_col].value_counts().nlargest(10)
-                        
-                        # Create appropriate chart
+
+                        # Create appropriate chart using centralized utility
                         if dist_chart_type == "Pie Chart":
-                            fig, ax = plt.subplots(figsize=(10, 6))
+                            title = f'Distribution of {dist_col}'
+                            if use_filter and filter_col and filter_val:
+                                title += f' (Filtered by {filter_col}={filter_val})'
                             
-                            # Create pie chart
-                            wedges, texts, autotexts = ax.pie(
-                                value_counts, 
-                                labels=value_counts.index, 
-                                autopct='%1.1f%%',
-                                textprops={'fontsize': 10},
-                                wedgeprops={'width': 0.5, 'edgecolor': 'w'}
+                            fig = ChartConfig.create_pie_chart(
+                                data=value_counts.values,
+                                labels=value_counts.index,
+                                title=title,
+                                size=ChartConfig.SMALL,  # Use small size for the UI
+                                min_percent_for_label=3.0
                             )
                             
-                            # Improve text visibility
-                            for text in texts:
-                                text.set_fontsize(9)
-                            for autotext in autotexts:
-                                autotext.set_fontsize(9)
-                                autotext.set_fontweight('bold')
-                            
-                            # Add a title
-                            title = f'Distribution of {dist_col}'
-                            if use_filter and filter_col and filter_val:
-                                title += f' (Filtered by {filter_col}={filter_val})'
-                            ax.set_title(title)
-                            
-                            # Add a circle at the center to create a donut chart
-                            centre_circle = plt.Circle((0, 0), 0.25, fc='white')
-                            ax.add_patch(centre_circle)
-                            
                         else:  # Bar Chart
-                            fig, ax = plt.subplots(figsize=(10, 6))
-                            value_counts.plot(kind='bar', ax=ax)
-                            
-                            # Add a title
                             title = f'Distribution of {dist_col}'
                             if use_filter and filter_col and filter_val:
                                 title += f' (Filtered by {filter_col}={filter_val})'
-                            ax.set_title(title)
                             
-                            # Rotate labels for better readability
-                            plt.xticks(rotation=45, ha='right')
-                            
-                            # Add value labels on top of bars
-                            for i, v in enumerate(value_counts):
-                                ax.text(i, v + 0.1, str(v), ha='center')
-                        
+                            fig = ChartConfig.create_bar_chart(
+                                data=value_counts.values,
+                                labels=value_counts.index,
+                                title=title,
+                                xlabel=dist_col,
+                                ylabel='Count',
+                                size=ChartConfig.SMALL  # Use small size for the UI
+                            )
                         st.pyplot(fig)
                         
                         # Add download button for the chart
-                        buf = io.BytesIO()
-                        fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
                         btn = st.download_button(
                             label="Download Chart",
-                            data=buf.getvalue(),
+                            data=ChartConfig.figure_to_bytes(fig),
                             file_name=f"{dist_col}_distribution.png",
                             mime="image/png"
                         )

@@ -14,7 +14,11 @@ class QualitativeAnswerAgent:
     
     def __init__(self, llm):
         self.llm = llm
+        self.column_hints = []
         self.rate_limiter = RateLimiter(base_delay=2.0, max_retries=3, max_delay=60.0)  
+
+    def set_column_hints(self, column_hints: List[str]):
+        self.column_hints = column_hints
     
     def generate_qualitative_answers(self, df: pd.DataFrame, analysis_results: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
@@ -24,7 +28,7 @@ class QualitativeAnswerAgent:
         start_time = time.time()
         
         # First, perform deep analysis on the actual data to extract meaningful insights
-        data_insights = self._extract_deep_data_insights(df)
+        data_insights = self._extract_deep_data_insights(df, self.column_hints)
         print(f"Data insights extracted: {len(data_insights.keys())} data categories analyzed")
         
         # Use predefined questions instead of generating them
@@ -71,7 +75,7 @@ class QualitativeAnswerAgent:
 
 
 
-    def _extract_deep_data_insights(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def _extract_deep_data_insights(self, df: pd.DataFrame, prioritized_columns: List[str]) -> Dict[str, Any]:
         """Extract detailed and meaningful insights from the actual data"""
         insights = {}
         total_tickets = len(df)
@@ -82,6 +86,30 @@ class QualitativeAnswerAgent:
         text_cols = []
         date_cols = []
         numeric_cols = []
+
+
+        # First check prioritized columns
+        for col in prioritized_columns:
+            if col in df.columns:
+                # Skip columns with too many missing values (>50%)
+                missing_rate = df[col].isna().mean()
+                if missing_rate > 0.5:
+                    continue
+                    
+                if df[col].dtype == 'object':
+                    # Check if it's text or categorical based on average length
+                    avg_len = df[col].astype(str).str.len().mean()
+                    if avg_len > 30:  # Longer text
+                        text_cols.append(col)
+                    else:
+                        # Check if it's a good categorical column (not too many unique values)
+                        unique_ratio = df[col].nunique() / len(df)
+                        if unique_ratio < 0.3:  # Less than 30% unique values
+                            categorical_cols.append(col)
+                elif pd.api.types.is_numeric_dtype(df[col]):
+                    numeric_cols.append(col)
+                elif pd.api.types.is_datetime64_any_dtype(df[col]) or any(date_term in col.lower() for date_term in ['date', 'time', 'created', 'opened', 'closed']):
+                    date_cols.append(col)
         
         for col in df.columns:
             # Skip columns with too many missing values (>50%)
@@ -103,7 +131,8 @@ class QualitativeAnswerAgent:
                 numeric_cols.append(col)
             elif pd.api.types.is_datetime64_any_dtype(df[col]) or any(date_term in col.lower() for date_term in ['date', 'time', 'created', 'opened', 'closed']):
                 date_cols.append(col)
-        
+                
+        insights["prioritized_columns"] = prioritized_columns
         insights["categorical_cols"] = categorical_cols
         insights["text_cols"] = text_cols
         insights["date_cols"] = date_cols

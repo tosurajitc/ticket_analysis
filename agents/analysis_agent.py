@@ -13,7 +13,13 @@ class AnalysisAgent:
     
     def __init__(self, llm):
         self.llm = llm
+        self.column_hints = []
     
+
+    def set_column_hints(self, column_hints: List[str]):
+        self.column_hints = column_hints
+
+
     def analyze_data(self, df: pd.DataFrame) -> Dict[str, Any]:
         """
         Generate comprehensive analysis of the ticket data
@@ -21,21 +27,24 @@ class AnalysisAgent:
         try:
             # Basic statistics
             stats = self._calculate_basic_stats(df)
+
+            # Prioritize column hints in analysis if available
+            prioritized_columns = self.column_hints if self.column_hints else list(df.columns)
             
             # Time-based analysis
-            time_analysis = self._analyze_time_dimensions(df)
+            time_analysis = self._analyze_time_dimensions(df, prioritized_columns)
             
             # Category/type analysis
-            category_analysis = self._analyze_categories(df)
+            category_analysis = self._analyze_categories(df, prioritized_columns)
             
             # Priority analysis
-            priority_analysis = self._analyze_priority(df)
+            priority_analysis = self._analyze_priority(df, prioritized_columns)
             
             # Status analysis
-            status_analysis = self._analyze_status(df)
+            status_analysis = self._analyze_status(df, prioritized_columns)
             
             # Text analysis of descriptions (if available)
-            text_analysis = self._analyze_text_fields(df)
+            text_analysis = self._analyze_text_fields(df, prioritized_columns)
             
             # Combine all analyses
             analysis_results = {
@@ -76,10 +85,29 @@ class AnalysisAgent:
         
         return stats
     
-    def _analyze_time_dimensions(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def _analyze_time_dimensions(self, df: pd.DataFrame, prioritized_columns: List[str]) -> Dict[str, Any]:
         """Analyze time-related dimensions in the data"""
         # Try to identify date columns
         date_cols = []
+        # First check if any prioritized columns are date columns
+        for col in prioritized_columns:
+            if col in df.columns and any(date_term in col.lower() for date_term in ['date', 'time', 'created', 'resolved', 'closed', 'updated']):
+                try:
+                    pd.to_datetime(df[col].iloc[0] if len(df) > 0 else '', errors='coerce')
+                    date_cols.append(col)
+                except:
+                    pass
+        
+        # Then check remaining columns if needed
+        if not date_cols:
+            for col in df.columns:
+                if col not in prioritized_columns and any(date_term in col.lower() for date_term in ['date', 'time', 'created', 'resolved', 'closed', 'updated']):
+                    try:
+                        pd.to_datetime(df[col].iloc[0] if len(df) > 0 else '', errors='coerce')
+                        date_cols.append(col)
+                    except:
+                        pass
+
         for col in df.columns:
             # Check if column name suggests it's a date
             if any(date_term in col.lower() for date_term in ['date', 'time', 'created', 'resolved', 'closed', 'updated']):
@@ -173,10 +201,29 @@ class AnalysisAgent:
         
         return time_analysis
     
-    def _analyze_categories(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def _analyze_categories(self, df: pd.DataFrame, prioritized_columns: List[str]) -> Dict[str, Any]:
         """Analyze category or type related fields"""
         # Identify potential category columns
         category_cols = []
+        # First check if any prioritized columns are date columns
+        for col in prioritized_columns:
+            if col in df.columns and any(date_term in col.lower() for date_term in ['category', 'type', 'group', 'class']):
+                try:
+                    pd.to_datetime(df[col].iloc[0] if len(df) > 0 else '', errors='coerce')
+                    category_cols.append(col)
+                except:
+                    pass
+        
+        # Then check remaining columns if needed
+        if not category_cols:
+            for col in df.columns:
+                if col not in prioritized_columns and any(date_term in col.lower() for date_term in ['category', 'type', 'group', 'class']):
+                    try:
+                        pd.to_datetime(df[col].iloc[0] if len(df) > 0 else '', errors='coerce')
+                        category_cols.append(col)
+                    except:
+                        pass
+
         for col in df.columns:
             if any(cat_term in col.lower() for cat_term in ['category', 'type', 'group', 'class']):
                 if df[col].dtype == 'object' or df[col].dtype == 'category':
@@ -206,10 +253,30 @@ class AnalysisAgent:
         return category_analysis
 
     
-    def _analyze_priority(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def _analyze_priority(self, df: pd.DataFrame, prioritized_columns: List[str]) -> Dict[str, Any]:
         """Analyze priority-related fields"""
         # Identify potential priority columns
         priority_cols = []
+
+        # First check if any prioritized columns are date columns
+        for col in prioritized_columns:
+            if col in df.columns and any(date_term in col.lower() for date_term in ['priority', 'severity', 'urgency', 'importance']):
+                try:
+                    pd.to_datetime(df[col].iloc[0] if len(df) > 0 else '', errors='coerce')
+                    priority_cols.append(col)
+                except:
+                    pass
+        
+        # Then check remaining columns if needed
+        if not priority_cols:
+            for col in df.columns:
+                if col not in prioritized_columns and any(date_term in col.lower() for date_term in ['priority', 'severity', 'urgency', 'importance']):
+                    try:
+                        pd.to_datetime(df[col].iloc[0] if len(df) > 0 else '', errors='coerce')
+                        priority_cols.append(col)
+                    except:
+                        pass
+
         for col in df.columns:
             if any(prio_term in col.lower() for prio_term in ['priority', 'severity', 'urgency', 'importance']):
                 priority_cols.append(col)
@@ -244,10 +311,29 @@ class AnalysisAgent:
         
         return priority_analysis
     
-    def _analyze_status(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def _analyze_status(self, df: pd.DataFrame, prioritized_columns: List[str]) -> Dict[str, Any]:
         """Analyze status-related fields"""
         # Identify potential status columns
         status_cols = []
+        # First check if any prioritized columns are date columns
+        for col in prioritized_columns:
+            if col in df.columns and any(date_term in col.lower() for date_term in ['status', 'state', 'resolution']):
+                try:
+                    pd.to_datetime(df[col].iloc[0] if len(df) > 0 else '', errors='coerce')
+                    status_cols.append(col)
+                except:
+                    pass
+        
+        # Then check remaining columns if needed
+        if not status_cols:
+            for col in df.columns:
+                if col not in prioritized_columns and any(date_term in col.lower() for date_term in ['status', 'state', 'resolution']):
+                    try:
+                        pd.to_datetime(df[col].iloc[0] if len(df) > 0 else '', errors='coerce')
+                        status_cols.append(col)
+                    except:
+                        pass
+
         for col in df.columns:
             if any(status_term in col.lower() for status_term in ['status', 'state', 'resolution']):
                 status_cols.append(col)
@@ -265,10 +351,28 @@ class AnalysisAgent:
         
         return status_analysis
     
-    def _analyze_text_fields(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def _analyze_text_fields(self, df: pd.DataFrame, prioritized_columns: List[str]) -> Dict[str, Any]:
         """Analyze text fields like descriptions"""
         # Identify potential text columns
         text_cols = []
+        # First check if any prioritized columns are date columns
+        for col in prioritized_columns:
+            if col in df.columns and any(date_term in col.lower() for date_term in ['description', 'comment', 'note', 'detail', 'summary']):
+                try:
+                    pd.to_datetime(df[col].iloc[0] if len(df) > 0 else '', errors='coerce')
+                    text_cols.append(col)
+                except:
+                    pass
+        
+        # Then check remaining columns if needed
+        if not text_cols:
+            for col in df.columns:
+                if col not in prioritized_columns and any(date_term in col.lower() for date_term in ['description', 'comment', 'note', 'detail', 'summary']):
+                    try:
+                        pd.to_datetime(df[col].iloc[0] if len(df) > 0 else '', errors='coerce')
+                        text_cols.append(col)
+                    except:
+                        pass
         for col in df.columns:
             if any(text_term in col.lower() for text_term in ['description', 'comment', 'note', 'detail', 'summary']):
                 if df[col].dtype == 'object':

@@ -9,8 +9,11 @@ from utils.rate_limiter import RateLimiter
 class AutomationRecommendationAgent:
     def __init__(self, llm):
         self.llm = llm
+        self.column_hints = []
         self.rate_limiter = RateLimiter(base_delay=3.0, max_retries=3, max_delay=120.0)
 
+    def set_column_hints(self, column_hints: List[str]):
+        self.column_hints = column_hints
 
     def identify_automation_opportunities(
         self, 
@@ -21,6 +24,14 @@ class AutomationRecommendationAgent:
         """
         Identify potential automation opportunities based on ticket data
         """
+
+        if not selected_columns:
+            selected_columns = self.column_hints
+        
+        # If still no selected columns, use all columns
+        if not selected_columns:
+            selected_columns = list(df.columns)
+
         # Validate inputs
         if df is None or len(df) == 0 or not selected_columns:
             return []

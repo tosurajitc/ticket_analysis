@@ -6,6 +6,8 @@ from typing import List, Dict, Any, Tuple
 import io
 from matplotlib.figure import Figure
 from utils.json_utils import make_json_serializable
+from utils.chart_utils import ChartConfig
+
 
 class VisualizationAgent:
     """
@@ -14,21 +16,28 @@ class VisualizationAgent:
     
     def __init__(self, llm):
         self.llm = llm
+        self.column_hints = []
         # Set up visualization style
         sns.set_style("whitegrid")
         plt.rcParams.update({'font.size': 10})
+
+    def set_column_hints(self, column_hints: List[str]):
+        self.column_hints = column_hints
     
     def generate_visualizations(self, df: pd.DataFrame, analysis_results: Dict[str, Any]) -> List[Figure]:
         """
         Generate relevant visualizations based on the data and analysis results
         """
         visualizations = []
+
+        # Determine which visualizations to create based on the data and column hints
+        prioritized_columns = self.column_hints if self.column_hints else []
         
         # Determine which visualizations to create based on the data
-        category_cols = self._identify_category_columns(df, analysis_results)
-        priority_cols = self._identify_priority_columns(df, analysis_results)
-        status_cols = self._identify_status_columns(df, analysis_results)
-        time_cols = self._identify_time_columns(df, analysis_results)
+        category_cols = self._identify_category_columns(df, analysis_results, prioritized_columns)
+        priority_cols = self._identify_priority_columns(df, analysis_results, prioritized_columns)
+        status_cols = self._identify_status_columns(df, analysis_results, prioritized_columns)
+        time_cols = self._identify_time_columns(df, analysis_results, prioritized_columns)
         numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
         
         # Print the selected columns for debugging
@@ -81,8 +90,10 @@ class VisualizationAgent:
         
         return visualizations
     
+
+
     def _create_pie_chart(self, df: pd.DataFrame, category_col: str) -> Figure:
-        """Create a pie chart for category distribution with improved label handling"""
+        """Create a pie chart for category distribution"""
         try:
             # Get value counts with limit to top 6 categories
             value_counts = df[category_col].value_counts().nlargest(6)
@@ -92,74 +103,15 @@ class VisualizationAgent:
                 other_count = df[category_col].value_counts().iloc[6:].sum()
                 value_counts = pd.concat([value_counts, pd.Series([other_count], index=['Other'])])
             
-            # Calculate percentages
-            total = value_counts.sum()
-            percentages = (value_counts / total * 100).round(1)
-            
-            # Create figure
-            fig, ax = plt.subplots(figsize=(9, 7))
-            
-            # Use a colorful palette
-            colors = plt.cm.tab10(np.linspace(0, 1, len(value_counts)))
-            
-            # Create two lists - one for labels to display directly on the chart, 
-            # and one for labels to only show in the legend
-            pie_labels = []
-            pie_autopct = []
-            
-            for i, (label, pct) in enumerate(percentages.items()):
-                if pct >= 2.0:  # Only show labels for segments 3% or larger
-                    pie_labels.append(label)
-                    pie_autopct.append(f'{pct}%')
-                else:
-                    pie_labels.append('')  # Empty label for small segments
-                    pie_autopct.append('')
-            
-            # Create pie chart
-            wedges, texts = ax.pie(
-                value_counts, 
-                labels=pie_labels,
-                colors=colors,
-                startangle=90,
-                wedgeprops={'width': 0.5, 'edgecolor': 'w'},
-                textprops={'fontsize': 10}
+            # Create pie chart using centralized chart utility
+            fig = ChartConfig.create_pie_chart(
+                data=value_counts.values,
+                labels=value_counts.index,
+                title=f'{category_col.title()} Distribution',
+                size=ChartConfig.MEDIUM,
+                min_percent_for_label=3.0
             )
             
-            # Add percentage annotations for segments >= 3%
-            for i, p in enumerate(wedges):
-                if percentages.iloc[i] >= 3.0:
-                    ang = (p.theta2 - p.theta1)/2. + p.theta1
-                    y = np.sin(np.deg2rad(ang))
-                    x = np.cos(np.deg2rad(ang))
-                    horizontalalignment = {-1: "right", 1: "left"}[int(np.sign(x))]
-                    connectionstyle = f"angle,angleA=0,angleB={ang}"
-                    ax.annotate(
-                        f'{percentages.iloc[i]}%',
-                        xy=(x, y), 
-                        xytext=(1.35*np.sign(x), 1.4*y),
-                        horizontalalignment=horizontalalignment,
-                        arrowprops=dict(arrowstyle="-", connectionstyle=connectionstyle),
-                    )
-            
-            # Add a comprehensive legend
-            legend_labels = [f"{label} ({percentages.iloc[i]}%)" for i, label in enumerate(value_counts.index)]
-            ax.legend(
-                wedges, 
-                legend_labels, 
-                title=f"{category_col.title()}",
-                loc="center left",
-                bbox_to_anchor=(1, 0.5),
-                fontsize=9
-            )
-            
-            # Add a title
-            ax.set_title(f'{category_col.title()} Distribution', fontsize=12, fontweight='bold')
-            
-            # Add a white circle to create a donut chart effect
-            centre_circle = plt.Circle((0, 0), 0.25, fc='white')
-            ax.add_patch(centre_circle)
-            
-            plt.tight_layout()
             return fig
         except Exception as e:
             print(f"Error creating pie chart for {category_col}: {str(e)}")
@@ -167,11 +119,18 @@ class VisualizationAgent:
 
 
 
-    def _identify_category_columns(self, df: pd.DataFrame, analysis_results: Dict[str, Any]) -> List[str]:
+    def _identify_category_columns(self, df: pd.DataFrame, analysis_results: Dict[str, Any], prioritized_columns: List[str]) -> List[str]:
         """Identify columns that represent meaningful categories in the data"""
         category_cols = []
         
-        # First check analysis results
+        # First check if any prioritized columns could be category columns
+        for col in prioritized_columns:
+            if col in df.columns and (df[col].dtype == 'object' or df[col].dtype == 'category'):
+                # Check if it has reasonable cardinality to be a category column
+                if df[col].nunique() < min(50, len(df) * 0.5):
+                    category_cols.append(col)
+
+        # then check analysis results
         if "category_analysis" in analysis_results:
             category_analysis = analysis_results["category_analysis"]
             if "category_columns" in category_analysis:
@@ -238,10 +197,19 @@ class VisualizationAgent:
         
         return category_cols
     
-    def _identify_priority_columns(self, df: pd.DataFrame, analysis_results: Dict[str, Any]) -> List[str]:
+    def _identify_priority_columns(self, df: pd.DataFrame, analysis_results: Dict[str, Any], prioritized_columns: List[str]) -> List[str]:
         """Identify columns that represent priority in the data"""
         priority_cols = []
         
+
+        # First check if any prioritized columns could be category columns
+        for col in prioritized_columns:
+            if col in df.columns and (df[col].dtype == 'object' or df[col].dtype == 'priority'):
+                # Check if it has reasonable cardinality to be a category column
+                if df[col].nunique() < min(50, len(df) * 0.5):
+                    priority_cols.append(col)
+
+
         # First check analysis results
         if "priority_analysis" in analysis_results:
             priority_analysis = analysis_results["priority_analysis"]
@@ -256,10 +224,17 @@ class VisualizationAgent:
         
         return priority_cols
     
-    def _identify_status_columns(self, df: pd.DataFrame, analysis_results: Dict[str, Any]) -> List[str]:
+    def _identify_status_columns(self, df: pd.DataFrame, analysis_results: Dict[str, Any], prioritized_columns: List[str]) -> List[str]:
         """Identify columns that represent status in the data"""
         status_cols = []
-        
+
+        # First check if any prioritized columns could be category columns
+        for col in prioritized_columns:
+            if col in df.columns and (df[col].dtype == 'object' or df[col].dtype == 'status'):
+                # Check if it has reasonable cardinality to be a category column
+                if df[col].nunique() < min(50, len(df) * 0.5):
+                    status_cols.append(col)
+
         # First check analysis results
         if "status_analysis" in analysis_results:
             status_analysis = analysis_results["status_analysis"]
@@ -274,10 +249,18 @@ class VisualizationAgent:
         
         return status_cols
     
-    def _identify_time_columns(self, df: pd.DataFrame, analysis_results: Dict[str, Any]) -> List[str]:
+    def _identify_time_columns(self, df: pd.DataFrame, analysis_results: Dict[str, Any], prioritized_columns: List[str]) -> List[str]:
         """Identify columns that represent time dimensions in the data"""
         time_cols = []
         
+
+        # First check if any prioritized columns could be category columns
+        for col in prioritized_columns:
+            if col in df.columns and (df[col].dtype == 'object' or df[col].dtype == 'date'):
+                # Check if it has reasonable cardinality to be a category column
+                if df[col].nunique() < min(50, len(df) * 0.5):
+                    time_cols.append(col)
+
         # First check analysis results
         if "time_analysis" in analysis_results:
             time_analysis = analysis_results["time_analysis"]
@@ -303,19 +286,22 @@ class VisualizationAgent:
             # Limit to top 10 categories
             value_counts = df[category_col].value_counts().nlargest(10)
             
-            fig, ax = plt.subplots(figsize=(10, 6))
+            # Create figure with reduced size (25% smaller)
+            fig, ax = plt.subplots(figsize=(7.5, 4.5))  # Reduced from (10, 6)
+            
             value_counts.plot(kind='bar', ax=ax, color='steelblue')
             
-            ax.set_title(f'Top 10 {category_col.title()} Distribution')
-            ax.set_xlabel(category_col.title())
-            ax.set_ylabel('Count')
+            ax.set_title(f'Top 10 {category_col.title()} Distribution', fontsize=11)
+            ax.set_xlabel(category_col.title(), fontsize=10)
+            ax.set_ylabel('Count', fontsize=10)
             
             # Rotate x-axis labels for better readability
-            plt.xticks(rotation=45, ha='right')
+            plt.xticks(rotation=45, ha='right', fontsize=9)
+            plt.yticks(fontsize=9)
             
-            # Add value labels on top of bars
+            # Add value labels on top of bars, slightly smaller
             for i, v in enumerate(value_counts):
-                ax.text(i, v + 0.1, str(v), ha='center')
+                ax.text(i, v + 0.1, str(v), ha='center', fontsize=8)
             
             plt.tight_layout()
             return fig

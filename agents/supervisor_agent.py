@@ -38,12 +38,18 @@ class SupervisorAgent:
         self.visualizations = None
         self.automation_suggestions = None
         self.qualitative_answers = None
+
+        # Add this line to store column hints
+        self.column_hints = []
     
     def _ensure_analysis_agent(self):
         """Ensure analysis agent is initialized"""
         if self.analysis_agent is None:
             from agents.analysis_agent import AnalysisAgent
             self.analysis_agent = AnalysisAgent(self.llm)
+
+            # Set column hints
+            self.analysis_agent.set_column_hints(self.column_hints)
         return self.analysis_agent
     
     def _ensure_visualization_agent(self):
@@ -51,6 +57,8 @@ class SupervisorAgent:
         if self.visualization_agent is None:
             from agents.visualization_agent import VisualizationAgent
             self.visualization_agent = VisualizationAgent(self.llm)
+            # Set column hints
+            self.visualization_agent.set_column_hints(self.column_hints)
         return self.visualization_agent
     
     def _ensure_automation_agent(self):
@@ -58,6 +66,8 @@ class SupervisorAgent:
         if self.automation_agent is None:
             from agents.automation_agent import AutomationRecommendationAgent
             self.automation_agent = AutomationRecommendationAgent(self.llm)
+            # Set column hints
+            self.automation_agent.set_column_hints(self.column_hints)
         return self.automation_agent
     
     def _ensure_qa_agent(self):
@@ -65,6 +75,8 @@ class SupervisorAgent:
         if self.qa_agent is None:
             from agents.qa_agent import QualitativeAnswerAgent
             self.qa_agent = QualitativeAnswerAgent(self.llm)
+            # Set column hints
+            self.qa_agent.set_column_hints(self.column_hints)
         return self.qa_agent
     
     def _ensure_chat_agent(self):
@@ -72,6 +84,8 @@ class SupervisorAgent:
         if self.chat_agent is None:
             from agents.chat_agent import ChatAgent
             self.chat_agent = ChatAgent(self.llm)
+            # Set column hints
+            self.chat_agent.set_column_hints(self.column_hints)
         return self.chat_agent
             
     def generate_targeted_automation_suggestions(self, selected_columns: List[str]) -> List[str]:
@@ -154,6 +168,10 @@ class SupervisorAgent:
         Process uploaded data file using the data agent
         """
         try:
+
+            # Store column hints
+            self.column_hints = column_hints or []
+
             # Load data through data agent
             self.data = self.data_agent.load_data(uploaded_file, column_hints)
             
@@ -207,7 +225,7 @@ class SupervisorAgent:
         
     def generate_insights(self) -> Dict[str, Any]:
         """
-        Generate comprehensive insights from the data
+        Generate comprehensive insights from the data with focus on important columns
         """
         if self.data is None:
             print("No data loaded. Call process_data first.")
