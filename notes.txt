@@ -9,7 +9,7 @@ GIT PUSH Steps:
 In the terminal, initialize a new Git repository: git init
 Add all files in your folder to the staging area: git add .
 Commit the files with a message: git commit -m "Initial commit"
-Link your local repository to the GitHub repository you mentioned (first time required): git remote add origin https://github.com/tosurajitc/Agentic_Ticket_Anaolysis.git
+Link your local repository to the GitHub repository you mentioned (first time required): git remote add origin https://github.com/tosurajitc/ticket_analysis.git
 Push the changes to the remote repository: git push -u origin master
 
 If git hub fails then:
@@ -19,57 +19,56 @@ git remote add origin https://github.com/tosurajitc/Agentic_Ticket_Anaolysis.git
 Streamlit: https://tosurajitc-agentic-ticket-anaolysis-app-bf8nh3.streamlit.app/
 
 
-ticket-analysis-project/
+
+incident_analytics/
 │
-├── agents/
+├── main.py                      # Main application entry point
+├── .env                         # Environment variables
+├── requirements.txt             # Dependencies
+│
+├── config/
 │   ├── __init__.py
-│   ├── analysis_agent.py         # Core analysis logic
-│   ├── automation_agent.py       # Generates automation recommendations
-│   ├── chat_agent.py             # Handles conversational queries
-│   ├── data_agent.py             # Handles data loading and preprocessing
-│   ├── qa_agent.py               # Generates qualitative answers
-│   ├── supervisor_agent.py       # Coordinates between different agents
-│   └── visualization_agent.py    # Creates data visualizations
+│   ├── config.py                # Configuration management
+│   └── constants.py             # Application constants
 │
-├── utils/
+├── data/
 │   ├── __init__.py
-│   ├── json_utils.py             # Custom JSON serialization
-│   ├── rate_limiter.py           # API rate limiting utility
-│   └── batch_processor.py        # Batch processing utility
+│   ├── data_loader.py           # Data loading and preprocessing
+│   ├── data_processor.py        # Data transformation
+│   └── data_validator.py        # Data validation
 │
-├── app.py                        # Streamlit application entry point
-└── .env                          # Environment configuration
-
-# Ticket Data Analysis and Automation Insight Generation
-
-The solution processes large ticket datasets (100,000+ rows) through a coordinated system of specialized agents 
-that work together to extract insights and identify automation opportunities.
-
-When processing begins, the **DataProcessingAgent** loads, cleans, and chunks the data into manageable segments. 
-It handles missing values and standardizes column names, making the data ready for analysis.
-
-Next, the **AnalysisAgent** performs a comprehensive examination of the data, analyzing basic statistics, 
-time dimensions, categories, priorities, and status distributions. It also examines text fields using LLM-based 
-analysis to extract common themes and patterns from ticket descriptions.
-
-The **VisualizationAgent** creates visual representations of the data patterns, identifying meaningful columns 
-and generating charts that highlight key distributions and relationships in the data.
-
-For automation insights, the **AutomationRecommendationAgent** examines patterns in categories, text fields, 
-time data, and workflows. It identifies repetitive patterns that suggest automation opportunities, 
-then uses the LLM to generate specific, actionable automation recommendations with implementation plans.
-
-The **QualitativeAnswerAgent** generates answers to strategic questions about the data, providing deeper 
-insights into automation potential by analyzing patterns that may not be immediately obvious from statistical analysis alone.
-
-All these agents are orchestrated by the **SupervisorAgent**, which manages the workflow, handles errors, 
-and ensures each agent has the necessary data. To handle large datasets efficiently, the system employs:
-
-1. Data chunking to process data in manageable batches
-2. Rate limiting to manage API calls to the LLM
-3. Parallel processing where appropriate
-4. Robust error handling with fallback mechanisms
-5. JSON serialization utilities to handle complex data types
-
-The result is a comprehensive analysis that identifies automation opportunities by detecting patterns in 
-large volumes of ticket data, producing practical, data-driven recommendations for improving operational efficiency.
+├── models/
+│   ├── __init__.py
+│   ├── llm_manager.py           # LLM integration
+│   ├── clustering.py            # Pattern detection
+│   ├── anomaly_detection.py     # Anomaly detection
+│   └── forecasting.py           # Predictive analytics
+│
+├── analysis/
+│   ├── __init__.py
+│   ├── insights_generator.py    # Core insights generation
+│   ├── automation_detector.py   # Automation opportunity detection
+│   ├── resource_optimizer.py    # Resource optimization
+│   └── root_cause_analyzer.py   # Root cause analysis
+│
+├── visualization/
+│   ├── __init__.py
+│   ├── chart_generator.py       # Chart generation utilities
+│   ├── dashboard_builder.py     # Dashboard component builder
+│   └── interactive_elements.py  # Interactive UI components
+│
+└── ui/
+    ├── __init__.py
+    ├── app.py                   # Main Streamlit app
+    ├── components.py            # Reusable UI components
+    ├── pages/
+    │   ├── __init__.py
+    │   ├── landing_page.py      # Main dashboard
+    │   ├── insights_page.py     # AI-generated insights
+    │   ├── automation_page.py   # Automation opportunities
+    │   ├── resource_page.py     # Resource optimization
+    │   └── conversation_page.py # Conversational interface
+    └── utils/
+        ├── __init__.py
+        ├── session_state.py     # Session state management
+        └── ui_helpers.py        # UI utility functions

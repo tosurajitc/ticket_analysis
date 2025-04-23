@@ -1,9 +1,66 @@
-streamlit==1.29.0
-pandas==2.1.1
-numpy==1.26.0
-matplotlib==3.8.0
-seaborn==0.13.0
-langchain==0.0.335
-langchain-groq
-python-dotenv==1.0.0
-openpyxl==3.1.2
+# Core Python Libraries
+python-dotenv>=1.0.0
+typing>=3.7.4.3
+
+# Data Manipulation
+pandas>=2.0.2
+numpy>=1.24.3
+
+# Machine Learning and AI
+scikit-learn>=1.2.2
+scipy>=1.10.1
+torch>=2.0.1
+transformers>=4.30.2
+
+# Visualization
+plotly>=5.15.0
+matplotlib>=3.7.1
+
+# Natural Language Processing
+nltk>=3.8.1
+spacy>=3.5.2
+
+# LLM and AI Integration
+openai>=0.27.8
+sentence-transformers>=2.2.2
+
+# Web Framework and UI
+streamlit>=1.23.1
+altair>=5.0.1
+
+# Clustering and Analysis
+hdbscan>=0.8.29
+umap-learn>=0.5.3
+
+# Forecasting and Time Series
+statsmodels>=0.14.0
+pmdarima>=2.0.2
+
+# System and Utility
+python-dateutil>=2.8.2
+pytz>=2023.3
+
+# Error Handling and Logging
+sentry-sdk>=1.25.1
+loguru>=0.7.0
+
+# Optional: Security and Environment Management
+cryptography>=41.0.1
+python-jose>=3.3.0
+
+# Development and Testing
+pytest>=7.3.1
+black>=23.3.0
+flake8>=6.0.0
+
+# API and Web Requests
+requests>=2.31.0
+httpx>=0.24.1
+
+# Optional: Additional NLP and Text Processing
+textblob>=0.17.1
+gensim>=4.3.1
+prophet
+seaborn
+openpyxl
+xlrd
