@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 class DataLoader:
     """
-    Class for loading incident data from various file formats.
+    Simplified class for loading incident data from converted and formatted files.
+    Focuses on loading data from file paths, removing upload functionality.
     """
     
     def __init__(self, config: Dict[str, Any]):
@@ -38,11 +39,11 @@ class DataLoader:
     
     def load_data(self, file_content: bytes, file_name: str) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
-        Load incident data from uploaded file content with enhanced logging and error handling.
+        Load incident data from file content with enhanced logging and error handling.
         
         Args:
-            file_content: Binary content of the uploaded file
-            file_name: Name of the uploaded file
+            file_content: Binary content of the file
+            file_name: Name of the file
             
         Returns:
             Tuple containing:
@@ -53,6 +54,12 @@ class DataLoader:
             ValueError: If the file format is not supported or data is invalid
         """
         logger.info(f"Starting data loading process for file: {file_name}")
+        
+        # Check if this is a formatted file
+        is_formatted = False
+        if file_name.endswith('_formatted.csv') or '_formatted_' in file_name:
+            is_formatted = True
+            logger.info(f"Detected pre-formatted file: {file_name}")
         
         # Extract file extension
         file_ext = Path(file_name).suffix.lower()
@@ -73,92 +80,91 @@ class DataLoader:
         load_errors = []
         
         try:
-            # Attempt different parsing strategies based on file type
-            if normalized_ext == 'csv':
-                # Try multiple encodings and parsing strategies
-                encodings_to_try = ['utf-8', 'latin-1', 'iso-8859-1', 'utf-16']
-                delimiters_to_try = [',', ';', '\t', '|']
-                
-                for encoding in encodings_to_try:
-                    for delimiter in delimiters_to_try:
-                        try:
-                            df = pd.read_csv(
-                                io.BytesIO(file_content), 
-                                encoding=encoding, 
-                                delimiter=delimiter,
-                                low_memory=False,
-                                parse_dates=True,
-                                infer_datetime_format=True
-                            )
-                            
-                            # Additional validation
-                            if not df.empty and len(df.columns) > 1:
-                                logger.info(f"Successfully loaded CSV with encoding {encoding} and delimiter {delimiter}")
-                                break
-                        except Exception as e:
-                            load_errors.append(f"CSV load attempt failed: {str(e)}")
-                            continue
-                    else:
-                        continue
-                    break
-                else:
-                    raise ValueError(f"Could not load CSV file. Attempts failed: {load_errors}")
-            
-            elif normalized_ext in ['xlsx', 'xls']:
-                # Enhanced Excel loading
+            # For pre-formatted files, use direct loading with fewer attempts
+            if is_formatted and normalized_ext == 'csv':
                 try:
-                    df = pd.read_excel(
+                    df = pd.read_csv(
                         io.BytesIO(file_content), 
-                        engine='openpyxl',
-                        parse_dates=True
+                        encoding='utf-8',
+                        low_memory=False
                     )
-                except Exception as excel_error:
-                    logger.error(f"Excel file loading failed: {excel_error}")
-                    raise
-            
-            elif normalized_ext == 'json':
-                # JSON loading with error handling
-                try:
-                    df = pd.read_json(
-                        io.BytesIO(file_content), 
-                        lines=True, 
-                        convert_axes=True
-                    )
-                except Exception as json_error:
-                    logger.error(f"JSON file loading failed: {json_error}")
-                    raise
-            
+                    logger.info("Successfully loaded pre-formatted CSV file")
+                except Exception as e:
+                    # Try alternate encoding if UTF-8 fails
+                    try:
+                        df = pd.read_csv(
+                            io.BytesIO(file_content), 
+                            encoding='latin-1',
+                            low_memory=False
+                        )
+                        logger.info("Successfully loaded pre-formatted CSV with latin-1 encoding")
+                    except Exception as e2:
+                        load_errors.append(f"Pre-formatted CSV load attempts failed: {str(e)}, {str(e2)}")
+                        raise ValueError(f"Could not load pre-formatted CSV file: {load_errors}")
             else:
-                raise ValueError(f"Unsupported file type: {normalized_ext}")
+                # Regular loading logic for non-formatted files - CSV only
+                if normalized_ext == 'csv':
+                    # Try multiple encodings and parsing strategies
+                    encodings_to_try = ['utf-8', 'latin-1', 'iso-8859-1', 'utf-16']
+                    delimiters_to_try = [',', ';', '\t', '|']
+                    
+                    for encoding in encodings_to_try:
+                        for delimiter in delimiters_to_try:
+                            try:
+                                df = pd.read_csv(
+                                    io.BytesIO(file_content), 
+                                    encoding=encoding, 
+                                    delimiter=delimiter,
+                                    low_memory=False,
+                                    parse_dates=True
+                                )
+                                
+                                # Additional validation
+                                if not df.empty and len(df.columns) > 1:
+                                    logger.info(f"Successfully loaded CSV with encoding {encoding} and delimiter {delimiter}")
+                                    break
+                            except Exception as e:
+                                load_errors.append(f"CSV load attempt failed: {str(e)}")
+                                continue
+                        else:
+                            continue
+                        break
+                    else:
+                        raise ValueError(f"Could not load CSV file. Attempts failed: {load_errors}")
+                else:
+                    raise ValueError(f"Only CSV files are supported for converted data")
             
             # Log basic information about loaded data
             logger.info(f"Loaded data shape: {df.shape}")
             logger.info(f"Loaded data columns: {list(df.columns)}")
             
-            # Validate data structure and content - FIX: Use proper boolean checks
+            # Validate data structure and content
             validator = DataValidator()
             validation_results = validator.validate(df, self.mandatory_columns)
             
             # If validation failed
-            if not validation_results.get("is_valid", False):  # Fixed: Use .get() with default
+            if not validation_results.get("is_valid", False):
                 logger.error(f"Data validation failed: {validation_results['errors']}")
                 raise ValueError(f"Invalid data format: {validation_results['errors']}")
             
             # Check if there's enough data for meaningful analysis
-            if len(df) < 10:  # Minimum threshold for analysis
-                logger.warning("Insufficient data for meaningful analysis")
-                raise ValueError("The provided file contains insufficient data for meaningful analysis (minimum 10 incidents required)")
+            if len(df) < 5:  # Reduced threshold for converted data
+                logger.warning("Limited data for analysis")
+                logger.info(f"Proceeding with limited data: {len(df)} records")
             
-            # Process and clean the data
-            df, metadata = self._preprocess_data(df)
-            
-            # Add validation results to metadata
-            metadata.update({
-                "validation_results": validation_results,
-                "file_name": file_name,
-                "file_type": normalized_ext,
-                "original_columns": list(df.columns),
-            })
+            # Process and clean the data - skip for formatted files to avoid duplicating efforts
+            if is_formatted:
+                # For pre-formatted files, do minimal processing
+                metadata = {
+                    "formatted": True,
+                    "file_name": file_name,
+                    "file_type": normalized_ext,
+                    "original_columns": list(df.columns),
+                    "row_count": len(df)
+                }
+            else:
+                # Full preprocessing for non-formatted files
+                df, metadata = self._preprocess_data(df)
             
             logger.info(f"Successfully loaded data with {len(df)} incidents")
             return df, metadata
@@ -176,28 +182,9 @@ class DataLoader:
             
             raise ValueError(f"Error loading data: {error_details}")
     
-    def load_from_upload(self, uploaded_file) -> pd.DataFrame:
-        """
-        Load data from an uploaded file object.
-        
-        Args:
-            uploaded_file: Streamlit UploadedFile object
-            
-        Returns:
-            DataFrame with incident data
-        """
-        try:
-            file_content = uploaded_file.read()
-            file_name = uploaded_file.name
-            df, _ = self.load_data(file_content, file_name)
-            return df
-        except Exception as e:
-            logger.error(f"Error loading uploaded file: {str(e)}", exc_info=True)
-            return None
-    
     def load_from_path(self, file_path: str) -> pd.DataFrame:
         """
-        Enhanced load from path method with comprehensive error handling.
+        Load data from a file path with enhanced error recovery.
         
         Args:
             file_path: Path to the data file
@@ -219,9 +206,43 @@ class DataLoader:
             file_name = os.path.basename(file_path)
             
             # Use the comprehensive load_data method
-            df, _ = self.load_data(file_content, file_name)
-            return df
-        
+            try:
+                df, _ = self.load_data(file_content, file_name)
+                return df
+            except Exception as e:
+                logger.error(f"Error loading file {file_path}: {str(e)}")
+                
+                # Check if error is related to formatting
+                if "format" in str(e).lower() or "parse" in str(e).lower() or "conversion" in str(e).lower():
+                    logger.info(f"Attempting to format file {file_path} before loading")
+                    
+                    try:
+                        # Format the file
+                        from data.data_formatter import DataFormatter
+                        formatter = DataFormatter()
+                        
+                        # Format in place
+                        formatted_path = f"{file_path}.formatted"
+                        format_metadata = formatter.format_file(file_path, formatted_path)
+                        
+                        if format_metadata.get('success', False):
+                            # Try to load the formatted file
+                            with open(formatted_path, 'rb') as f:
+                                formatted_content = f.read()
+                            
+                            try:
+                                df, _ = self.load_data(formatted_content, f"{file_name}_formatted")
+                                return df
+                            except Exception as load_err:
+                                logger.error(f"Error loading formatted file: {str(load_err)}")
+                                # Last resort - try with pandas directly
+                                try:
+                                    return pd.read_csv(formatted_path)
+                                except:
+                                    pass
+                    except Exception as format_err:
+                        logger.error(f"Error during format recovery: {str(format_err)}", exc_info=True)
+    
         except ValueError as ve:
             # Log specific validation errors
             logger.error(f"Validation error loading file: {str(ve)}")
@@ -230,8 +251,31 @@ class DataLoader:
             # Log unexpected errors
             logger.error(f"Unexpected error loading file: {str(e)}", exc_info=True)
             return None
+            
+        return None  # Explicit return None if all attempts fail
+        
+
+
+    def load_processed_data(self) -> pd.DataFrame:
+        """
+        Returns the processed data from session state if available.
+        This method is used by various components that expect to get processed data from the loader.
+        
+        Returns:
+            DataFrame with processed incident data or None if not available
+        """
+        import streamlit as st
+        
+        if 'processed_data' in st.session_state and st.session_state.processed_data is not None:
+            return st.session_state.processed_data
+        elif 'raw_data' in st.session_state and st.session_state.raw_data is not None:
+            # Return raw data as fallback
+            return st.session_state.raw_data
+        else:
+            logger.warning("No processed data available in session state")
+            return None
     
-    # Fix for the _preprocess_data method in data_loader.py
+ 
     def _preprocess_data(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
         Clean and preprocess incident data.
@@ -411,45 +455,7 @@ class DataLoader:
         
         return df, metadata
 
-    def load_from_upload(self, uploaded_file) -> pd.DataFrame:
-        """
-        Load data from an uploaded file object.
-        
-        Args:
-            uploaded_file: Streamlit UploadedFile object
-            
-        Returns:
-            DataFrame with incident data
-        """
-        try:
-            file_content = uploaded_file.read()
-            file_name = uploaded_file.name
-            
-            try:
-                df, _ = self.load_data(file_content, file_name)
-                return df
-            except Exception as e:
-                logger.error(f"Error loading uploaded file: {str(e)}", exc_info=True)
-                
-                # Attempt direct loading as fallback
-                file_ext = os.path.splitext(file_name)[1].lower()
-                uploaded_file.seek(0)  # Reset file pointer
-                
-                if file_ext == '.csv':
-                    try:
-                        return pd.read_csv(uploaded_file)
-                    except:
-                        pass
-                elif file_ext in ['.xlsx', '.xls']:
-                    try:
-                        return pd.read_excel(uploaded_file)
-                    except:
-                        pass
-                        
-                return None
-        except Exception as e:
-            logger.error(f"Error with file upload: {str(e)}", exc_info=True)
-            return None
+
     
     def _clean_column_name(self, column_name: Any) -> str:
         """

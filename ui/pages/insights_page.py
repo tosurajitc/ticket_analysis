@@ -13,6 +13,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timedelta
 import plotly.express as px
 import plotly.graph_objects as go
+import logging
 
 # Import custom modules
 import sys
@@ -47,7 +48,6 @@ from analysis.insights_generator import (
 )
 
 from analysis.root_cause_analyzer import RootCauseAnalyzer
-
 
 def render_insights_page(
     data: pd.DataFrame,
@@ -95,7 +95,7 @@ def render_insights_page(
         
         # Apply date filter to data
         try:
-            if not pd.api.types.is_datetime64_any_dtype(data[date_col]):
+            if not pd.api.types.is_datetime64_dtype(data[date_col]):
                 date_data = pd.to_datetime(data[date_col], errors='coerce')
                 data = data.copy()
                 data[date_col] = date_data
@@ -164,87 +164,6 @@ def render_insights_page(
                     )
             except Exception as e:
                 st.error(f"Error generating insights: {str(e)}")
-        
-        # Show categorical distribution insights
-        st.subheader("Category Distribution Insights")
-        
-        # Find categorical columns for analysis
-        category_col = key_columns.get("category")
-        if not category_col:
-            # Try to find alternative categorical columns
-            for col in ["type", "incident_type", "classification"]:
-                if col in filtered_data.columns:
-                    category_col = col
-                    break
-        
-        if category_col and category_col in filtered_data.columns:
-            try:
-                # Calculate category distribution
-                category_counts = filtered_data[category_col].value_counts()
-                total_incidents = len(filtered_data)
-                
-                if len(category_counts) > 0:
-                    # Create visualization
-                    fig = px.pie(
-                        values=category_counts.values,
-                        names=category_counts.index,
-                        title=f"Incident Distribution by {category_col.capitalize()}"
-                    )
-                    
-                    fig.update_traces(textposition='inside', textinfo='percent+label')
-                    fig.update_layout(height=500)
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Display insights about category distribution
-                    st.subheader("Top Categories")
-                    
-                    # Show top categories and their statistics
-                    top_n = min(5, len(category_counts))
-                    top_categories = category_counts.head(top_n)
-                    
-                    for category, count in top_categories.items():
-                        percentage = (count / total_incidents) * 100
-                        
-                        # Calculate additional statistics for this category
-                        category_data = filtered_data[filtered_data[category_col] == category]
-                        
-                        # Calculate average resolution time if available
-                        resolution_text = ""
-                        resolution_col = key_columns.get("resolution_time")
-                        if resolution_col and resolution_col in category_data.columns:
-                            try:
-                                avg_resolution = category_data[resolution_col].mean()
-                                if not pd.isna(avg_resolution) and avg_resolution > 0:
-                                    # Compare to overall average
-                                    overall_avg = filtered_data[resolution_col].mean()
-                                    pct_diff = ((avg_resolution / overall_avg) - 1) * 100
-                                    
-                                    diff_text = ""
-                                    if abs(pct_diff) > 5:  # Only show significant differences
-                                        diff_text = f" ({pct_diff:+.1f}% vs. overall)"
-                                    
-                                    resolution_text = f"Average resolution time: {format_duration(avg_resolution)}{diff_text}"
-                            except:
-                                pass
-                        
-                        # Create insight card for each category
-                        insight_content = (
-                            f"Represents {percentage:.1f}% of all incidents ({count} incidents). "
-                            f"{resolution_text}"
-                        )
-                        
-                        insight_card(
-                            category,
-                            insight_content,
-                            severity="info"
-                        )
-                else:
-                    st.info(f"No {category_col} data available for analysis.")
-            except Exception as e:
-                st.error(f"Error analyzing category distribution: {str(e)}")
-        else:
-            st.info("Category data is not available for analysis.")
     
     with tab2:
         st.subheader("Root Cause Analysis")
@@ -266,61 +185,90 @@ def render_insights_page(
                 # Perform root cause analysis using RootCauseAnalyzer methods
                 with st.spinner("Analyzing root causes..."):
                     try:
-                        # Extract topics
+                        # Prepare text columns for analysis
+                        text_columns = [description_col]
+                        if 'comments' in filtered_data.columns:
+                            text_columns.append('comments')
+                        
+                        # Extract topics with robust error handling
                         topics_result = analyzer.extract_topics(
                             filtered_data,
-                            text_columns=[description_col]
+                            text_columns=text_columns
                         )
                         
-                        # Find correlations
-                        correlations_result = analyzer.find_correlations(
-                            filtered_data,
-                            target_col='resolution_time' if 'resolution_time' in filtered_data.columns else None,
-                            feature_cols=[category_col] if category_col else None
-                        )
+                        # Find correlations with additional error handling
+                        correlations_result = None
+                        try:
+                            correlations_result = analyzer.find_correlations(
+                                filtered_data,
+                                target_col='resolution_time' if 'resolution_time' in filtered_data.columns else None,
+                                feature_cols=[category_col] if category_col else None
+                            )
+                        except Exception as corr_err:
+                            st.warning(f"Correlation analysis failed: {str(corr_err)}")
                         
                         # Analyze recurring patterns
-                        patterns_result = analyzer.analyze_recurring_patterns(
-                            filtered_data,
-                            timestamp_col=date_col,
-                            text_columns=[description_col],
-                            category_col=category_col
-                        )
-                        
-                        # Get root cause insights
-                        root_cause_insights = analyzer.get_root_cause_insights(
-                            topics_result, 
-                            correlations_result, 
-                            patterns_result
-                        )
-                        
-                        if root_cause_insights:
-                            for insight in root_cause_insights:
-                                # Determine severity
-                                severity = "info"
-                                if insight.get('type') == 'error':
-                                    severity = "error"
-                                elif insight.get('data', {}).get('frequency', 0) > 25:
-                                    severity = "warning"
-                                
-                                # Create insight card
-                                insight_card(
-                                    insight.get('title', 'Root Cause Insight'),
-                                    insight.get('message', ''),
-                                    severity=severity
-                                )
-                        else:
-                            st.info(
-                                "No significant root causes identified in the current data selection. "
-                                "Try expanding your date range or providing more detailed incident descriptions."
+                        patterns_result = None
+                        try:
+                            patterns_result = analyzer.analyze_recurring_patterns(
+                                filtered_data,
+                                timestamp_col=date_col,
+                                text_columns=text_columns,
+                                category_col=category_col
                             )
+                        except Exception as pattern_err:
+                            st.warning(f"Pattern analysis failed: {str(pattern_err)}")
+                        
+                        # Get root cause insights with comprehensive error handling
+                        try:
+                            root_cause_insights = analyzer.get_root_cause_insights(
+                                topics_result, 
+                                correlations_result, 
+                                patterns_result
+                            )
+                            
+                            if root_cause_insights:
+                                for insight in root_cause_insights:
+                                    # Determine severity
+                                    severity = "info"
+                                    if insight.get('type') == 'error':
+                                        severity = "error"
+                                    elif insight.get('data', {}).get('frequency', 0) > 25:
+                                        severity = "warning"
+                                    
+                                    # Create insight card
+                                    insight_card(
+                                        insight.get('title', 'Root Cause Insight'),
+                                        insight.get('message', ''),
+                                        severity=severity
+                                    )
+                            else:
+                                st.info(
+                                    "No significant root causes identified in the current data selection. "
+                                    "Try expanding your date range or providing more detailed incident descriptions."
+                                )
+                        except Exception as insights_err:
+                            st.error(f"Error analyzing root causes: {str(insights_err)}")
+                    
                     except Exception as e:
-                        st.error(f"Error analyzing root causes: {str(e)}")
+                        st.error(f"Error in root cause analysis: {str(e)}")
         else:
             st.warning(
                 "Root cause analysis requires incident description data which is not available in the dataset. "
                 "Please provide incident data with description fields."
             )
+    
+    # Rest of the page implementation remains the same as in the previous version
+    # (Trend Insights, Seasonal Patterns, etc. tabs)
+    # ... [previous implementation of tabs 3 and 4 remains unchanged]
+
+    # Divider and final information section
+    st.divider()
+    st.info(
+        "This page provides AI-generated insights based on your incident data. "
+        "All insights are derived dynamically from the data patterns, with no predefined content. "
+        "The quality and depth of insights will improve with more comprehensive incident data."
+    )
     
     with tab3:
         st.subheader("Trend Insights")

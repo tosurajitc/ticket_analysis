@@ -96,7 +96,8 @@ def initialize_app() -> None:
 
 def load_data() -> bool:
     """
-    Load and process incident data with more flexible validation.
+    Load and process incident data from the converted file path.
+    Fixed to prevent preprocessing failures from resulting in empty data.
     
     Returns:
         bool: True if data was loaded successfully, False otherwise
@@ -105,7 +106,6 @@ def load_data() -> bool:
         # Log start of data loading
         logging.info("Starting data loading process")
         logging.info(f"Data source path: {st.session_state.get('data_source_path', 'Not set')}")
-        logging.info(f"Uploaded file: {st.session_state.get('uploaded_file', 'Not set')}")
         
         # Initialize data loader
         data_loader = DataLoader(st.session_state.config)
@@ -114,22 +114,47 @@ def load_data() -> bool:
         st.session_state.data_issues = []
         
         # Check if data source is provided
-        if not st.session_state.data_source_path and not st.session_state.uploaded_file:
-            error_msg = "No data source provided. Please upload a file or specify a data path."
+        if not st.session_state.data_source_path:
+            error_msg = "No data source path provided. Please convert your data first."
+            st.session_state.data_issues.append(error_msg)
+            logging.error(error_msg)
+            return False
+        
+        # Ensure the file exists
+        if not os.path.exists(st.session_state.data_source_path):
+            error_msg = f"File not found: {st.session_state.data_source_path}"
             st.session_state.data_issues.append(error_msg)
             logging.error(error_msg)
             return False
             
-        # Load data based on source
+        # Load data from path only
         try:
-            if st.session_state.uploaded_file:
-                # Load from uploaded file
-                data = data_loader.load_from_upload(st.session_state.uploaded_file)
-                logging.info("Attempting to load data from uploaded file")
-            else:
-                # Load from path
-                data = data_loader.load_from_path(st.session_state.data_source_path)
-                logging.info(f"Attempting to load data from path: {st.session_state.data_source_path}")
+            # Load from path
+            data = data_loader.load_from_path(st.session_state.data_source_path)
+            logging.info(f"Attempting to load data from path: {st.session_state.data_source_path}")
+            
+            # If the loading failed, try formatting it
+            if data is None:
+                logging.info("Initial load failed. Attempting to format file before loading again")
+                
+                try:
+                    # Import formatter
+                    from data.data_formatter import DataFormatter
+                    formatter = DataFormatter()
+                    
+                    # Format the source file
+                    formatted_path = f"{st.session_state.data_source_path}.formatted"
+                    format_metadata = formatter.format_file(st.session_state.data_source_path, formatted_path)
+                    
+                    if format_metadata.get('success', False):
+                        # Update source path and try loading again
+                        st.session_state.data_source_path = formatted_path
+                        data = data_loader.load_from_path(formatted_path)
+                        
+                        if data is not None:
+                            logging.info(f"Successfully loaded data after formatting: {formatted_path}")
+                except Exception as format_err:
+                    logging.error(f"Formatting recovery attempt failed: {str(format_err)}")
         except Exception as load_error:
             error_msg = f"Error loading data: {str(load_error)}"
             st.session_state.data_issues.append(error_msg)
@@ -158,12 +183,17 @@ def load_data() -> bool:
             # Continue processing anyway with a warning
             st.session_state.data_issues.append("Proceeding with available data, but some analyses may be limited.")
             logging.warning(validation_error)
-            
-        # Process data - FIXED APPROACH
+        
+        # FIXED APPROACH: Process data with DataProcessor but keep original data if processing fails
         processor = DataProcessor(st.session_state.config)
         
         # Create a combined preprocessing approach using multiple analysis types
-        processed_data = data.copy()
+        processed_data = data.copy()  # Start with a copy of the original data
+        
+        # Keep track of successful preprocessing steps
+        successful_preprocessing = False
+        
+        # Try each preprocessing step independently and only apply if successful
         preprocessing_steps = [
             ("time_analysis", "Time analysis preprocessing"),
             ("category_analysis", "Category analysis preprocessing"),
@@ -172,20 +202,29 @@ def load_data() -> bool:
         
         for analysis_type, log_message in preprocessing_steps:
             try:
-                result = processor.prepare_data_for_analysis(processed_data, analysis_type)
-                if result[0] is not None:
+                result = processor.prepare_data_for_analysis(processed_data.copy(), analysis_type)
+                if result[0] is not None and not result[0].empty:
+                    # Only update the processed data if this step succeeded
                     processed_data = result[0]
+                    successful_preprocessing = True
                     logging.info(log_message)
+                else:
+                    logging.warning(f"{analysis_type} returned None or empty DataFrame, skipping this step")
             except Exception as e:
                 logging.warning(f"{log_message} failed: {str(e)}")
+                # Continue with other preprocessing steps
+        
+        # If all preprocessing failed, log a warning but continue with original data
+        if not successful_preprocessing:
+            logging.warning("All preprocessing steps failed. Using original data without preprocessing.")
+            st.session_state.data_issues.append("Data preprocessing had issues. Using original data for analysis.")
+            processed_data = data.copy()  # Fallback to original data
         
         # Check if we still have data after processing
         if processed_data is None or processed_data.empty:
-            error_msg = "Failed to process data: No valid data after preprocessing"
-            st.session_state.error_message = error_msg
-            st.session_state.data_issues.append(error_msg)
-            logging.error(error_msg)
-            return False
+            logging.error("No data after preprocessing, falling back to original data")
+            processed_data = data.copy()  # Fallback to original data
+            st.session_state.data_issues.append("Preprocessing resulted in empty data. Using original data instead.")
             
         # Log processed data characteristics
         logging.info(f"Processed data shape: {processed_data.shape}")

@@ -236,8 +236,7 @@ class DataFormatter:
     
     def _format_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Apply comprehensive formatting to a DataFrame to make it fully compatible
-        with analysis components.
+        Apply comprehensive formatting to a DataFrame with improved datetime handling.
         
         Args:
             df: DataFrame to format
@@ -251,9 +250,44 @@ class DataFormatter:
         # Make a defensive copy
         df = df.copy()
         
+        # Enhanced datetime conversion for created_date column
+        if 'created_date' in df.columns:
+            try:
+                # First try standard conversion
+                df['created_date'] = pd.to_datetime(df['created_date'], errors='coerce')
+                
+                # Check if conversion succeeded and we have valid dates
+                if df['created_date'].isna().all():
+                    # Try some common date formats explicitly
+                    date_formats = [
+                        '%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%m/%d/%Y %H:%M:%S', 
+                        '%m/%d/%Y', '%d-%m-%Y', '%d/%m/%Y'
+                    ]
+                    
+                    for date_format in date_formats:
+                        try:
+                            df['created_date'] = pd.to_datetime(df['created_date'], format=date_format, errors='coerce')
+                            if not df['created_date'].isna().all():
+                                break  # Found a working format
+                        except:
+                            continue
+                    
+                # Check if we have at least some valid dates
+                if not df['created_date'].isna().all():
+                    # Set a flag in the df to indicate we have valid dates
+                    df.attrs['has_valid_dates'] = True
+                    logger.info(f"Successfully converted created_date column with {df['created_date'].notna().sum()} valid dates")
+                else:
+                    logger.warning("All dates in created_date column were converted to NaT")
+                    df.attrs['has_valid_dates'] = False
+                    
+            except Exception as e:
+                logger.error(f"Error converting created_date: {str(e)}")
+                df.attrs['has_valid_dates'] = False
+        
         # Format each column based on its expected type
         for column, dtype in self.column_types.items():
-            if column in df.columns:
+            if column in df.columns and column != 'created_date':  # Skip created_date as we handled it above
                 try:
                     # Handle different data types
                     if dtype == "datetime64[ns]":
@@ -305,7 +339,7 @@ class DataFormatter:
         
         # Handle potential date columns not in standard schema
         date_columns = [col for col in df.columns if col not in self.column_types 
-                      and any(term in col.lower() for term in ['date', 'time', 'created', 'resolved'])]
+                    and any(term in col.lower() for term in ['date', 'time', 'created', 'resolved'])]
         
         for col in date_columns:
             try:

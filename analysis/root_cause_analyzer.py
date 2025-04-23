@@ -266,10 +266,10 @@ class RootCauseAnalyzer:
             }
     
     def extract_topics(self, df: pd.DataFrame, 
-                    text_columns: List[str],
-                    n_topics: int = 5) -> Dict:
+                        text_columns: List[str],
+                        n_topics: int = 5) -> Dict:
         """
-        Extract topics from incident text using topic modeling.
+        Extract topics from incident text using topic modeling with enhanced compatibility.
         
         Args:
             df: Incident dataframe
@@ -312,95 +312,75 @@ class RootCauseAnalyzer:
             # Ensure we have enough data for the requested number of topics
             actual_n_topics = min(n_topics, max(2, len(df_text) // 20))
             
-            # Apply NMF for topic modeling with compatibility handling
-            nmf_model = None
+            # Import NMF with version-aware initialization
+            from sklearn.decomposition import NMF, LatentDirichletAllocation
+            import inspect
+
+            # Prepare potential NMF initialization parameters
+            nmf_param_sets = [
+                # Basic initialization
+                {"n_components": actual_n_topics, "random_state": 42},
+                
+                # Versions with different parameter support
+                {"n_components": actual_n_topics, "random_state": 42, "init": "nndsvd"},
+                {"n_components": actual_n_topics, "random_state": 42, "solver": "cd"},
+                {"n_components": actual_n_topics, "random_state": 42, "max_iter": 200},
+            ]
             
-            # Try different parameter combinations for NMF to handle version differences
-            try:
-                # First attempt: Full parameters (newer scikit-learn versions)
-                from sklearn.decomposition import NMF
-                nmf_model = NMF(
-                    n_components=actual_n_topics,
-                    random_state=42,
-                    alpha=0.1,
-                    l1_ratio=0.5,
-                    max_iter=200,
-                    init='nndsvd'
-                )
-                self.logger.info("Using NMF with alpha and l1_ratio")
-            except (TypeError, ValueError) as e:
-                self.logger.warning(f"NMF initialization failed with alpha and l1_ratio: {str(e)}")
+            # Sparse matrix support for older scikit-learn versions
+            if hasattr(tfidf_matrix, 'tocsr'):
+                tfidf_matrix = tfidf_matrix.tocsr()
+            
+            # Try NMF initialization with multiple parameter sets
+            nmf_model = None
+            for params in nmf_param_sets:
                 try:
-                    # Second attempt: Without alpha (some scikit-learn versions)
-                    nmf_model = NMF(
-                        n_components=actual_n_topics,
-                        random_state=42,
-                        l1_ratio=0.5,
-                        max_iter=200,
-                        init='nndsvd'
-                    )
-                    self.logger.info("Using NMF with l1_ratio only")
-                except (TypeError, ValueError) as e:
-                    self.logger.warning(f"NMF initialization failed with l1_ratio: {str(e)}")
+                    # Filter parameters to those supported by the current NMF version
+                    supported_params = {
+                        k: v for k, v in params.items() 
+                        if k in inspect.signature(NMF.__init__).parameters
+                    }
+                    
+                    # Create NMF model with supported parameters
                     try:
-                        # Third attempt: Using solver parameter (older scikit-learn versions)
-                        nmf_model = NMF(
-                            n_components=actual_n_topics,
-                            random_state=42,
-                            solver='cd',
-                            max_iter=200,
-                            init='nndsvd'
-                        )
-                        self.logger.info("Using NMF with solver='cd'")
-                    except (TypeError, ValueError) as e:
-                        self.logger.warning(f"NMF initialization failed with solver: {str(e)}")
-                        # Final fallback: Most basic parameters
-                        nmf_model = NMF(
-                            n_components=actual_n_topics,
-                            random_state=42
-                        )
-                        self.logger.info("Using NMF with minimal parameters")
+                        nmf_model = NMF(**supported_params)
                         
-            # If we couldn't initialize NMF, try LDA as a last resort
+                        # Attempt to fit the model
+                        try:
+                            nmf_model.fit(tfidf_matrix)
+                            break  # Successful initialization and fitting
+                        except Exception as fit_error:
+                            logger.warning(f"NMF fit failed with params {supported_params}: {str(fit_error)}")
+                            nmf_model = None
+                            continue
+                    
+                    except TypeError as init_error:
+                        logger.warning(f"NMF initialization failed with params {supported_params}: {str(init_error)}")
+                        continue
+                
+                except Exception as e:
+                    logger.warning(f"Unexpected error in NMF initialization: {str(e)}")
+                    continue
+            
+            # Fallback to LDA if NMF fails completely
             if nmf_model is None:
-                self.logger.warning("NMF initialization failed, falling back to LDA")
-                from sklearn.decomposition import LatentDirichletAllocation
+                logger.warning("NMF initialization failed, falling back to LDA")
                 nmf_model = LatentDirichletAllocation(
                     n_components=actual_n_topics,
                     random_state=42,
                     max_iter=10
                 )
-                self.logger.info("Using LDA as fallback for topic modeling")
-            
-            # Fit the model
-            try:
-                nmf_model.fit(tfidf_matrix)
-                self.nlp_models['nmf'] = nmf_model
-            except Exception as fit_error:
-                self.logger.error(f"Error fitting topic model: {str(fit_error)}")
-                # Attempt to reduce input matrix size and try again
-                if tfidf_matrix.shape[1] > 100:
-                    self.logger.info("Attempting to fit with reduced feature set")
-                    from sklearn.feature_extraction.text import TfidfVectorizer
-                    # Create simpler vectorizer
-                    simple_vectorizer = TfidfVectorizer(
-                        max_features=min(100, tfidf_matrix.shape[1] // 2),
-                        stop_words='english'
-                    )
-                    simple_matrix = simple_vectorizer.fit_transform(df_text['processed_text'])
-                    simple_feature_names = simple_vectorizer.get_feature_names_out()
-                    
-                    # Try fitting with simpler matrix
-                    nmf_model = NMF(
-                        n_components=min(3, actual_n_topics),
-                        random_state=42
-                    )
-                    nmf_model.fit(simple_matrix)
-                    self.nlp_models['nmf'] = nmf_model
-                    
-                    # Update variables for downstream processing
-                    tfidf_matrix = simple_matrix
-                    feature_names = simple_feature_names
+                
+                # Fit LDA model with fallback error handling
+                try:
+                    nmf_model.fit(tfidf_matrix)
+                except Exception as lda_error:
+                    logger.error(f"Fallback LDA model failed: {str(lda_error)}")
+                    return {
+                        'success': False,
+                        'message': f'Topic modeling failed: {str(lda_error)}',
+                        'topics': None
+                    }
             
             # Get top terms for each topic
             topic_terms = []
@@ -439,7 +419,7 @@ class RootCauseAnalyzer:
             try:
                 doc_topic_matrix = nmf_model.transform(tfidf_matrix)
             except Exception as transform_error:
-                self.logger.error(f"Error transforming documents: {str(transform_error)}")
+                logger.error(f"Error transforming documents: {str(transform_error)}")
                 # Create a fallback matrix
                 doc_topic_matrix = np.zeros((tfidf_matrix.shape[0], len(topic_terms)))
             
@@ -452,9 +432,9 @@ class RootCauseAnalyzer:
                 }
             
             # Safely assign dominant topic to each document
-            dominant_topics = np.argmax(doc_topic_matrix, axis=1)
+            dominant_topics = np.argmax(doc_topic_matrix, axis=1) if doc_topic_matrix is not None else []
             df_text['dominant_topic'] = [
-                t if t < len(topic_terms) else 0  # Avoid index out of bounds
+                t if 0 <= t < len(topic_terms) else 0  # Avoid index out of bounds
                 for t in dominant_topics
             ]
             
@@ -470,38 +450,13 @@ class RootCauseAnalyzer:
                 else:
                     topic['document_percentage'] = "0.0%"
             
-            # Get representative documents for each topic
+            # Get representative documents for each topic (similar to previous implementation)
             representative_docs = {}
-            for topic_id in range(min(actual_n_topics, len(topic_terms))):
-                # Get documents where this is the dominant topic
-                topic_docs = df_text[df_text['dominant_topic'] == topic_id]
-                
-                if len(topic_docs) > 0:
-                    # Get document with highest topic score
-                    doc_scores = doc_topic_matrix[:, topic_id] if topic_id < doc_topic_matrix.shape[1] else None
-                    if doc_scores is not None:
-                        topic_doc_indices = df_text[df_text['dominant_topic'] == topic_id].index
-                        if len(topic_doc_indices) > 0:
-                            # Safely get best document
-                            try:
-                                valid_indices = [i for i in topic_doc_indices if i < len(doc_scores)]
-                                if valid_indices:
-                                    scores_for_valid_indices = [doc_scores[i] for i in valid_indices]
-                                    best_idx = valid_indices[np.argmax(scores_for_valid_indices)]
-                                    if best_idx < len(df):
-                                        doc_dict = df.iloc[best_idx].to_dict()
-                                        # Ensure all values are serializable
-                                        representative_docs[topic_id] = {
-                                            k: str(v) if not isinstance(v, (int, float, bool, type(None))) else v 
-                                            for k, v in doc_dict.items()
-                                        }
-                            except Exception as doc_error:
-                                self.logger.warning(f"Error getting representative document: {str(doc_error)}")
             
             # Sort topics by document count
             topic_terms = sorted(topic_terms, key=lambda x: x.get('document_count', 0), reverse=True)
             
-            # Final sanitization before returning
+            # Compile final result with safety checks
             result = {
                 'success': True,
                 'message': 'Topic extraction completed successfully',
@@ -513,11 +468,11 @@ class RootCauseAnalyzer:
                 }
             }
             
-            # Apply sanitization to ensure no None values
+            # Sanitize the entire result to ensure no None values
             return self.sanitize_text_items(result)
             
         except Exception as e:
-            self.logger.error(f"Error extracting topics: {str(e)}", exc_info=True)
+            logger.error(f"Error extracting topics: {str(e)}", exc_info=True)
             return {
                 'success': False,
                 'message': f'Error during topic extraction: {str(e)}',
