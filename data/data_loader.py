@@ -310,7 +310,7 @@ class DataLoader:
                 df = df.drop_duplicates(subset=['incident_id'])
                 preprocessing_steps.append(f"Removed {original_dupes} duplicate incidents")
         
-        # 4. Convert date columns to datetime
+        # 4. Convert date columns to datetime with enhanced error handling
         date_columns = []
         for col in df.columns:
             col_str = str(col).lower()
@@ -319,8 +319,18 @@ class DataLoader:
                     
         for col in date_columns:
             try:
-                if df[col].dtype == 'object':
+                if df[col].dtype == 'object' or pd.api.types.is_float_dtype(df[col]):
+                    # First try standard conversion
                     df[col] = pd.to_datetime(df[col], errors='coerce')
+                    
+                    # If we have many NaT values, try Excel date conversion
+                    if df[col].isna().mean() > 0.5 and pd.api.types.is_float_dtype(df[col]):
+                        try:
+                            # Try Excel date conversion (days since 1899-12-30)
+                            df[col] = pd.to_datetime(df[col], unit='D', origin='1899-12-30', errors='coerce')
+                        except:
+                            pass
+                            
                     preprocessing_steps.append(f"Converted {col} to datetime")
             except Exception as e:
                 logger.warning(f"Could not convert {col} to datetime: {str(e)}")
@@ -359,25 +369,39 @@ class DataLoader:
             df['priority'] = df['priority'].apply(map_priority)
             preprocessing_steps.append("Standardized priority values")
         
-        # 6. Calculate derived metrics if possible
+        # 6. Calculate derived metrics if possible with enhanced error handling
         derived_columns = []
         
         # Resolution time if both dates exist
         if 'created_date' in df.columns and 'resolved_date' in df.columns:
             try:
-                df['resolution_time_hours'] = (df['resolved_date'] - df['created_date']).dt.total_seconds() / 3600
+                # Ensure both columns are datetime
+                for col in ['created_date', 'resolved_date']:
+                    if not pd.api.types.is_datetime64_dtype(df[col]):
+                        df[col] = pd.to_datetime(df[col], errors='coerce')
                 
-                # Filter valid values
-                def filter_valid_hours(x):
-                    if pd.isnull(x):
-                        return None
-                    if x < 0 or x > 8760:  # Negative or > 1 year
-                        return None
-                    return x
+                # Calculate resolution time safely with mask for valid date pairs
+                valid_mask = (~df['created_date'].isna()) & (~df['resolved_date'].isna())
+                df['resolution_time_hours'] = np.nan  # Initialize with NaN
                 
-                df['resolution_time_hours'] = df['resolution_time_hours'].apply(filter_valid_hours)
-                derived_columns.append('resolution_time_hours')
-                preprocessing_steps.append("Calculated resolution time in hours")
+                # Only calculate for rows with valid dates
+                if valid_mask.any():
+                    df.loc[valid_mask, 'resolution_time_hours'] = (
+                        (df.loc[valid_mask, 'resolved_date'] - df.loc[valid_mask, 'created_date'])
+                        .dt.total_seconds() / 3600
+                    )
+                    
+                    # Filter valid values
+                    def filter_valid_hours(x):
+                        if pd.isnull(x):
+                            return None
+                        if x < 0 or x > 8760:  # Negative or > 1 year
+                            return None
+                        return x
+                    
+                    df['resolution_time_hours'] = df['resolution_time_hours'].apply(filter_valid_hours)
+                    derived_columns.append('resolution_time_hours')
+                    preprocessing_steps.append("Calculated resolution time in hours")
             except Exception as e:
                 logger.warning(f"Could not calculate resolution time: {str(e)}")
         
@@ -394,7 +418,14 @@ class DataLoader:
                 df = df.dropna(subset=critical_columns)
                 preprocessing_steps.append(f"Removed {original_null_count} rows with missing values in critical columns")
         
-        # 8. Limit to maximum sample size if needed
+        # 8. Fill NULL values for string columns
+        string_columns = ['priority', 'status', 'category', 'assignee', 'assignment_group']
+        for col in string_columns:
+            if col in df.columns:
+                df[col] = df[col].fillna('Unknown').astype(str)
+                preprocessing_steps.append(f"Filled missing values in {col} with 'Unknown'")
+        
+        # 9. Limit to maximum sample size if needed
         if len(df) > self.max_sample_size:
             df = df.sample(n=self.max_sample_size, random_state=42)
             preprocessing_steps.append(f"Sampled {self.max_sample_size} incidents from {len(df)} total")

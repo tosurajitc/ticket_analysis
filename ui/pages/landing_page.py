@@ -540,15 +540,9 @@ def convert_and_save_data():
                 st.dataframe(test_df.head(5), use_container_width=True)
                 
                 # Highlight next steps for user
-                st.info("The data has been loaded successfully. Now you need to start the analysis process to generate insights, visualizations, and recommendations.")
+                st.info("The data has been loaded successfully. Now you can view insights and analysis in the tabs above.")
                 
-                # Create a prominent button to start analysis
-
-                # Find this section in convert_and_save_data() function
-                # The section is after the successful data loading, where the "Start Data Analysis" button is created
-                # Replace the existing button code with this improved version:
-
-                # Create a prominent button to start analysis
+                # Create a single prominent button to start analysis (no fallback mode)
                 if st.button("▶️ Start Data Analysis", type="primary", use_container_width=True):
                     # Set flags for processing
                     st.session_state.data_visible_in_dashboard = True  # This is crucial
@@ -599,24 +593,6 @@ def convert_and_save_data():
                     # Refresh the app to show analysis results
                     st.rerun()
 
-                # Also update the fallback button that appears after error handling:
-                # Find the fallback button (should be in the except block) and replace with:
-
-                if st.button("▶️ Start Data Analysis (Fallback Mode)", type="primary", use_container_width=True):
-                    st.session_state.data_visible_in_dashboard = True  # Critical flag
-                    st.session_state.analysis_triggered = True
-                    st.session_state.refresh_triggered = True
-                    
-                    # Log the fallback action
-                    import logging
-                    logging.info("*** Starting data analysis (Fallback Mode) - button clicked ***")
-                    logging.info(f"Session state before rerun: data_visible_in_dashboard={st.session_state.get('data_visible_in_dashboard', False)}")
-                    
-                    # Show message
-                    st.success("Starting analysis in fallback mode...")
-                    
-                    # Refresh
-                    st.rerun()
             except Exception as read_err:
                 import traceback
                 st.error(f"Failed to validate converted file: {str(read_err)}")
@@ -636,10 +612,10 @@ def convert_and_save_data():
                         st.session_state.data_sufficient = len(test_df) >= 5
                         st.dataframe(test_df.head(5), use_container_width=True)
                         
-                        st.info("The data has been loaded using a fallback method. Click the button below to start analysis.")
+                        st.info("The data has been loaded. Click the button below to start analysis.")
                         
-                        # Add the Start Data Analysis button
-                        if st.button("▶️ Start Data Analysis (Fallback Mode)", type="primary", use_container_width=True):
+                        # Add a single Start Data Analysis button (no fallback mode)
+                        if st.button("▶️ Start Data Analysis", type="primary", use_container_width=True):
                             st.session_state.data_visible_in_dashboard = True
                             st.session_state.analysis_triggered = True
                             st.session_state.refresh_triggered = True
