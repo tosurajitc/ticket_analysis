@@ -165,6 +165,8 @@ def render_insights_page(
             except Exception as e:
                 st.error(f"Error generating insights: {str(e)}")
     
+
+
     with tab2:
         st.subheader("Root Cause Analysis")
         
@@ -185,68 +187,126 @@ def render_insights_page(
                 # Perform root cause analysis using RootCauseAnalyzer methods
                 with st.spinner("Analyzing root causes..."):
                     try:
-                        # Prepare text columns for analysis
-                        text_columns = [description_col]
+                        # Prepare text columns for analysis with better error handling
+                        text_columns = []
+                        if description_col and description_col in filtered_data.columns:
+                            text_columns.append(description_col)
                         if 'comments' in filtered_data.columns:
                             text_columns.append('comments')
                         
+                        # Add debug information
+                        st.info(f"Analyzing root causes using: Text columns: {text_columns}, Category: {category_col}")
+                        
                         # Extract topics with robust error handling
-                        topics_result = analyzer.extract_topics(
-                            filtered_data,
-                            text_columns=text_columns
-                        )
+                        topics_result = None
+                        try:
+                            if text_columns:  # Only proceed if we have valid text columns
+                                topics_result = analyzer.extract_topics(
+                                    filtered_data,
+                                    text_columns=text_columns
+                                )
+                                if not topics_result.get('success', False):
+                                    st.warning(f"Topic extraction limited: {topics_result.get('error', 'Unknown error')}")
+                        except Exception as topic_err:
+                            st.warning(f"Topic extraction failed: {str(topic_err)}")
                         
                         # Find correlations with additional error handling
                         correlations_result = None
                         try:
-                            correlations_result = analyzer.find_correlations(
-                                filtered_data,
-                                target_col='resolution_time' if 'resolution_time' in filtered_data.columns else None,
-                                feature_cols=[category_col] if category_col else None
-                            )
+                            # Only try correlation if we have a category column
+                            if category_col and category_col in filtered_data.columns:
+                                # Find a suitable target column
+                                target_col = None
+                                for col in ['resolution_time', 'resolution_time_hours', 'time_to_resolve', 'duration']:
+                                    if col in filtered_data.columns:
+                                        # Make sure it's numeric and has values
+                                        try:
+                                            if pd.to_numeric(filtered_data[col], errors='coerce').notna().sum() > 10:
+                                                target_col = col
+                                                break
+                                        except:
+                                            continue
+                                
+                                # Proceed only if we found a valid target column
+                                if target_col:
+                                    feature_cols = [category_col]
+                                    correlations_result = analyzer.find_correlations(
+                                        filtered_data,
+                                        target_col=target_col,
+                                        feature_cols=feature_cols
+                                    )
+                                    if not correlations_result.get('success', False):
+                                        st.warning(f"Correlation analysis limited: {correlations_result.get('error', 'Unknown error')}")
+                                else:
+                                    st.info("No suitable numeric target column found for correlation analysis.")
                         except Exception as corr_err:
                             st.warning(f"Correlation analysis failed: {str(corr_err)}")
                         
-                        # Analyze recurring patterns
+                        # Analyze recurring patterns with better error handling
                         patterns_result = None
                         try:
-                            patterns_result = analyzer.analyze_recurring_patterns(
-                                filtered_data,
-                                timestamp_col=date_col,
-                                text_columns=text_columns,
-                                category_col=category_col
-                            )
+                            if text_columns and date_col and date_col in filtered_data.columns:
+                                # Convert date column to datetime if needed
+                                date_data = filtered_data[date_col]
+                                if not pd.api.types.is_datetime64_any_dtype(date_data):
+                                    date_data = pd.to_datetime(date_data, errors='coerce')
+                                    
+                                # Proceed only if we have valid dates
+                                if date_data.notna().sum() > 10:
+                                    # Create a copy to avoid modifying the original
+                                    pattern_data = filtered_data.copy()
+                                    pattern_data[date_col] = date_data
+                                    
+                                    # Use only valid category data if available
+                                    pattern_category = category_col if (category_col and category_col in pattern_data.columns) else None
+                                    
+                                    patterns_result = analyzer.analyze_recurring_patterns(
+                                        pattern_data,
+                                        timestamp_col=date_col,
+                                        text_columns=text_columns,
+                                        category_col=pattern_category
+                                    )
+                                    if not patterns_result.get('success', False):
+                                        st.warning(f"Pattern analysis limited: {patterns_result.get('error', 'Unknown error')}")
                         except Exception as pattern_err:
                             st.warning(f"Pattern analysis failed: {str(pattern_err)}")
                         
                         # Get root cause insights with comprehensive error handling
                         try:
-                            root_cause_insights = analyzer.get_root_cause_insights(
-                                topics_result, 
-                                correlations_result, 
-                                patterns_result
-                            )
-                            
-                            if root_cause_insights:
-                                for insight in root_cause_insights:
-                                    # Determine severity
-                                    severity = "info"
-                                    if insight.get('type') == 'error':
-                                        severity = "error"
-                                    elif insight.get('data', {}).get('frequency', 0) > 25:
-                                        severity = "warning"
-                                    
-                                    # Create insight card
-                                    insight_card(
-                                        insight.get('title', 'Root Cause Insight'),
-                                        insight.get('message', ''),
-                                        severity=severity
+                            # Only proceed if at least one analysis was successful
+                            if topics_result or correlations_result or patterns_result:
+                                root_cause_insights = analyzer.get_root_cause_insights(
+                                    topics_result, 
+                                    correlations_result, 
+                                    patterns_result
+                                )
+                                
+                                if root_cause_insights:
+                                    for insight in root_cause_insights:
+                                        # Determine severity
+                                        severity = "info"
+                                        if insight.get('type') == 'error':
+                                            severity = "error"
+                                        elif insight.get('data', {}).get('frequency', 0) > 25:
+                                            severity = "warning"
+                                        
+                                        # Display insight title with fallback
+                                        title = insight.get('title', 'Root Cause Insight')
+                                        
+                                        # Display insight message with fallback
+                                        message = insight.get('message', '')
+                                        if not message:  # If message is empty
+                                            message = "Insight details not available"
+                                        
+                                        # Create insight card
+                                        insight_card(title, message, severity=severity)
+                                else:
+                                    st.info(
+                                        "No significant root causes identified in the current data selection. "
+                                        "Try expanding your date range or providing more detailed incident descriptions."
                                     )
                             else:
-                                st.info(
-                                    "No significant root causes identified in the current data selection. "
-                                    "Try expanding your date range or providing more detailed incident descriptions."
-                                )
+                                st.warning("All root cause analyses failed. Please check warnings above for details.")
                         except Exception as insights_err:
                             st.error(f"Error analyzing root causes: {str(insights_err)}")
                     

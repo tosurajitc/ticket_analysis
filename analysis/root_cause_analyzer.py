@@ -8,7 +8,7 @@ from collections import Counter, defaultdict
 import networkx as nx
 import re
 import logging
-from typing import Dict, List, Tuple, Union, Optional, Set
+from typing import Dict, List, Tuple, Union, Optional, Set, Any
 import datetime
 
 class RootCauseAnalyzer:
@@ -479,127 +479,170 @@ class RootCauseAnalyzer:
                 'topics': None
             }
         
-    def find_correlations(self, df: pd.DataFrame, 
-                        target_col: str, 
-                        feature_cols: List[str] = None) -> Dict:
+
+
+    def find_correlations(self, df: pd.DataFrame, target_col: str = None, feature_cols: List[str] = None) -> Dict[str, Any]:
         """
-        Find correlations between the target column and other features.
+        Find correlations between features and target variable.
         
         Args:
-            df: Incident dataframe
-            target_col: Column to analyze correlations for (e.g., resolution_time)
-            feature_cols: Columns to check for correlation with target
+            df: DataFrame containing incident data
+            target_col: Name of the target column (e.g., resolution_time)
+            feature_cols: List of feature column names to analyze
             
         Returns:
-            Dictionary containing correlation analysis results
+            Dictionary with correlation analysis results
         """
-        if not self._validate_data(df, [target_col]):
-            return {
-                'success': False,
-                'message': 'Insufficient or invalid data for correlation analysis',
-                'correlations': None
-            }
+        # Initialize result
+        result = {
+            'success': False,
+            'correlations': {},
+            'top_factors': [],
+            'method': 'none'
+        }
+        
+        # Check if dataframe is valid
+        if df is None or df.empty:
+            result['error'] = "No data provided for correlation analysis"
+            return result
+        
+        # Check if we have a target column
+        if target_col is None:
+            # Try to find a suitable target column if not provided
+            for col in ['resolution_time', 'resolution_time_hours', 'time_to_resolve', 'duration']:
+                if col in df.columns:
+                    target_col = col
+                    break
+            
+            # If still not found
+            if target_col is None:
+                result['error'] = "No target column found or provided for correlation analysis"
+                return result
+        
+        # Check if target column exists
+        if target_col not in df.columns:
+            result['error'] = f"Target column '{target_col}' not found in data"
+            return result
+        
+        # Determine feature columns if not provided
+        if feature_cols is None or len(feature_cols) == 0:
+            # Try to automatically detect feature columns (skip datetime and ID columns)
+            feature_cols = []
+            for col in df.columns:
+                if col != target_col and not pd.api.types.is_datetime64_any_dtype(df[col]):
+                    # Skip ID-like columns (unique values > 50% of rows)
+                    if len(df[col].unique()) < len(df) * 0.5:
+                        feature_cols.append(col)
+        
+        # Validate feature columns exist in dataframe
+        valid_feature_cols = []
+        for col in feature_cols or []:
+            if col is not None and col in df.columns:  # <-- Add check for None
+                valid_feature_cols.append(col)
+        
+        # Check if we have any valid feature columns
+        if not valid_feature_cols:
+            result['error'] = "No valid feature columns found for correlation analysis"
+            return result
         
         try:
-            # If feature columns not specified, use all appropriate columns
-            if feature_cols is None:
-                # Exclude the target column and non-useful columns
-                exclude_cols = [target_col, 'id', 'incident_id', 'description', 'comments']
-                feature_cols = [col for col in df.columns if col not in exclude_cols]
-            
-            # Check if we have the target column in correct format
-            if target_col not in df.columns:
-                return {
-                    'success': False,
-                    'message': f'Target column {target_col} not found in data',
-                    'correlations': None
-                }
+            # Create a copy for analysis
+            analysis_df = df.copy()
             
             # Ensure target column is numeric
-            if not pd.api.types.is_numeric_dtype(df[target_col]):
-                try:
-                    df[target_col] = pd.to_numeric(df[target_col], errors='coerce')
-                except:
-                    return {
-                        'success': False,
-                        'message': f'Could not convert {target_col} to numeric',
-                        'correlations': None
-                    }
+            if not pd.api.types.is_numeric_dtype(analysis_df[target_col]):
+                # Try to convert to numeric
+                analysis_df[target_col] = pd.to_numeric(analysis_df[target_col], errors='coerce')
             
-            # Initialize results
-            numeric_correlations = []
-            categorical_associations = []
+            # Remove rows with missing target values
+            analysis_df = analysis_df.dropna(subset=[target_col])
             
-            # Analyze numeric correlations
-            numeric_cols = [col for col in feature_cols if pd.api.types.is_numeric_dtype(df[col])]
-            if numeric_cols:
-                # Calculate correlation matrix
-                corr_matrix = df[[target_col] + numeric_cols].corr(method='spearman')
+            # Check if we still have enough data
+            if len(analysis_df) < 10:
+                result['error'] = f"Insufficient data for correlation analysis after filtering (only {len(analysis_df)} valid rows)"
+                return result
+            
+            # Initialize correlation method
+            method = 'pearson'  # Default method
+            correlations = {}
+            
+            # Process each feature column
+            for col in valid_feature_cols:
+                # Skip columns with missing values
+                if analysis_df[col].isna().any():
+                    continue
                 
-                # Extract correlations with target
-                for col in numeric_cols:
-                    if col != target_col:
-                        correlation = corr_matrix.loc[target_col, col]
-                        if not pd.isna(correlation) and abs(correlation) > 0.1:
-                            numeric_correlations.append({
-                                'feature': col,
-                                'correlation': round(correlation, 3),
-                                'strength': abs(correlation),
-                                'direction': 'positive' if correlation > 0 else 'negative'
-                            })
-            
-            # Analyze categorical associations
-            categorical_cols = [col for col in feature_cols if col in df.columns and 
-                               not pd.api.types.is_numeric_dtype(df[col])]
-            
-            for col in categorical_cols:
-                # Group by category and calculate mean of target
                 try:
-                    group_means = df.groupby(col)[target_col].agg(['mean', 'count'])
-                    
-                    # Filter out categories with too few samples
-                    group_means = group_means[group_means['count'] >= 5]
-                    
-                    if len(group_means) >= 2:  # Need at least 2 categories
-                        # Calculate overall mean
-                        overall_mean = df[target_col].mean()
+                    # Determine correlation method based on data type
+                    if pd.api.types.is_numeric_dtype(analysis_df[col]):
+                        # Numeric column - use Pearson correlation
+                        corr = analysis_df[col].corr(analysis_df[target_col], method='pearson')
+                        method = 'pearson'
+                    else:
+                        # Categorical column - use correlation ratio or ANOVA
+                        # Convert to category
+                        analysis_df[col] = analysis_df[col].astype('category')
                         
-                        # Calculate max deviation from mean
-                        max_dev_category = group_means['mean'].idxmax()
-                        min_dev_category = group_means['mean'].idxmin()
-                        max_deviation = (group_means['mean'].max() - group_means['mean'].min()) / overall_mean
+                        # Calculate mean target value per category
+                        grouped = analysis_df.groupby(col)[target_col]
+                        means = grouped.mean()
+                        counts = grouped.count()
+                        overall_mean = analysis_df[target_col].mean()
                         
-                        # Only include if substantial deviation
-                        if max_deviation > 0.2:
-                            categorical_associations.append({
-                                'feature': col,
-                                'max_deviation': round(max_deviation, 3),
-                                'high_category': max_dev_category,
-                                'high_value': round(group_means.loc[max_dev_category, 'mean'], 3),
-                                'low_category': min_dev_category,
-                                'low_value': round(group_means.loc[min_dev_category, 'mean'], 3),
-                                'mean_difference': round(group_means['mean'].max() - group_means['mean'].min(), 3)
-                            })
+                        # Calculate correlation ratio
+                        numerator = sum(counts * (means - overall_mean)**2)
+                        denominator = sum((analysis_df[target_col] - overall_mean)**2)
+                        
+                        if denominator > 0:
+                            corr = np.sqrt(numerator / denominator)
+                        else:
+                            corr = 0
+                        
+                        method = 'correlation_ratio'
+                    
+                    # Store correlation if valid
+                    if not pd.isna(corr):
+                        correlations[col] = float(corr)
                 except Exception as e:
-                    self.logger.warning(f"Error analyzing categorical feature {col}: {str(e)}")
+                    # Skip this column if correlation fails
+                    continue
             
-            return {
-                'success': True,
-                'message': 'Correlation analysis completed successfully',
-                'correlations': {
-                    'target_column': target_col,
-                    'numeric_correlations': sorted(numeric_correlations, key=lambda x: abs(x['correlation']), reverse=True),
-                    'categorical_associations': sorted(categorical_associations, key=lambda x: x['max_deviation'], reverse=True)
+            # Check if we found any correlations
+            if not correlations:
+                result['error'] = "Could not calculate correlations with the provided columns"
+                return result
+            
+            # Sort correlations by absolute value
+            sorted_correlations = sorted(correlations.items(), key=lambda x: abs(x[1]), reverse=True)
+            
+            # Get top correlated factors (absolute correlation > 0.1)
+            top_factors = [
+                {
+                    'feature': feature,
+                    'correlation': float(corr),
+                    'direction': 'positive' if corr > 0 else 'negative',
+                    'strength': (
+                        'strong' if abs(corr) > 0.5 else
+                        'moderate' if abs(corr) > 0.3 else
+                        'weak'
+                    )
                 }
-            }
+                for feature, corr in sorted_correlations if abs(corr) > 0.1
+            ]
+            
+            # Update result
+            result['success'] = True
+            result['correlations'] = {feature: float(corr) for feature, corr in correlations.items()}
+            result['top_factors'] = top_factors
+            result['method'] = method
+            
+            return result
             
         except Exception as e:
-            self.logger.error(f"Error finding correlations: {str(e)}")
-            return {
-                'success': False,
-                'message': f'Error during correlation analysis: {str(e)}',
-                'correlations': None
-            }
+            import traceback
+            result['error'] = f"Error during correlation analysis: {str(e)}"
+            result['traceback'] = traceback.format_exc()  # Add traceback for debugging
+            return result
     
     def analyze_recurring_patterns(self, df: pd.DataFrame,
                                  timestamp_col: str,
